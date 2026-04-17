@@ -1,0 +1,343 @@
+Jenkins Class -08
+=======================
+
+
+https://devops-cicd.hashnode.dev/jenkins-pipeline-to-deploy-java-application-git-maven-nexus-tomcat
+
+Code Stage errors:
+1. git install
+2. correct repo configure (https)
+3. branch configurations
+4. credentials valid 
+
+
+
+
+
+
+Build stage errors:
+
+
+1. when you dont have pom.xml in your code
+2. when maven is not configured properly  
+tools {
+maven "mymaven"
+}
+3. typo 
+sh "mvn clean package"
+4. version issues with maven
+
+
+
+
+Artifact:
+1.  nexus version (3 or 2)
+2. https or http
+3. use live ip (nexus server)
+4. pom.xml configuration
+5. nexus credentials 
+6. war file location (target/war)
+
+
+Deploy:
+1. tomcat url
+2. tomcat credentials 
+3. target/*.war
+
+
+TOPIC: JENKINS PIPELINE(INTEGRATION WITH GIT, MAVEN, NEXUS & TOMCAT)
+=======================================================================
+
+overall servers we need is 3 EC2-Instance
+
+1. JENKINS EC2-Instance
+2. TOMCAT EC2-Instance
+3. NEXUS EC2-Instance
+
+CODE -----> BUILD------> TEST -------> ARTIFACT-----------> DEPLOY
+
+
+Launch an Instance------> no.of Instance: 02 name:Jenkins, NEXUS------>kernel 6.1----------->c7i-flex-large---------> with keypair--------> jenkins security group---->
+25ebs ----> launch instances
+
+
+Do Install Jenkins on Jenkins EC2-Instance
+Do Install Nexus on Nexus EC2-Instance
+
+
+Launch and connect EC2-Instance
+
+do set-up jenkins dashboard on JENKINS EC2-Instance like below
+
+sudo yum update –y
+sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+sudo yum upgrade
+sudo yum install java-17-amazon-corretto -y
+sudo yum install jenkins git -y
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+sudo systemctl status jenkins
+
+above all commands to set-up a Jenkins Dashboard
+
+Now launch and connect NEXUS EC2-Instance
+
+yum install java-17-amazon-corretto -y------------> command to install java 17th version
+
+mkdir /app-----> enter
+
+cd /app/----> command to go /app/ folder
+
+[root@NEXUS ~]# mkdir /app
+[root@NEXUS ~]# cd /app/
+[root@NEXUS app]# wget https://download.sonatype.com/nexus/3/nexus-3.89.1-02-linux-x86_64.tar.gz
+[root@NEXUS app]# tar -zxvf nexus-3.89.1-02-linux-x86_64.tar.gz 
+[root@NEXUS app]# ll
+total 454244
+drwxr-xr-x. 6 root root        94 Feb 28 05:43 nexus-3.89.1-02
+-rw-r--r--. 1 root root 465144623 Feb 11 12:16 nexus-3.89.1-02-linux-x86_64.tar.gz
+drwxr-xr-x. 3 root root        20 Feb 10 18:29 sonatype-work
+[root@NEXUS app]# useradd nexus
+[root@NEXUS app]# chown -R nexus:nexus nexus-3.89.1-02 sonatype-work/
+[root@NEXUS app]# ll
+total 454244
+drwxr-xr-x. 6 nexus nexus        94 Feb 28 05:43 nexus-3.89.1-02
+-rw-r--r--. 1 root  root  465144623 Feb 11 12:16 nexus-3.89.1-02-linux-x86_64.tar.gz
+drwxr-xr-x. 3 nexus nexus        20 Feb 10 18:29 sonatype-work
+[root@NEXUS app]# 
+[root@NEXUS app]# su - nexus
+[nexus@NEXUS ~]$ cd /app/
+[nexus@NEXUS app]$ ll
+total 454244
+drwxr-xr-x. 6 nexus nexus        94 Feb 28 05:43 nexus-3.89.1-02
+-rw-r--r--. 1 root  root  465144623 Feb 11 12:16 nexus-3.89.1-02-linux-x86_64.tar.gz
+drwxr-xr-x. 3 nexus nexus        20 Feb 10 18:29 sonatype-work
+[nexus@NEXUS app]$ cd nexus-3.89.1-02/
+[nexus@NEXUS nexus-3.89.1-02]$ ll
+total 16
+-rw-r--r--. 1 nexus nexus  1022 Feb 10 18:18 NOTICE.txt
+-rw-r--r--. 1 nexus nexus 11249 Feb 10 18:18 OSS-LICENSE.txt
+drwxr-xr-x. 2 nexus nexus    89 Feb 28 05:43 bin
+drwxr-xr-x. 2 nexus nexus    26 Feb 28 05:43 deploy
+drwxr-xr-x. 7 nexus nexus   143 Feb 28 05:43 etc
+drwxr-xr-x. 3 nexus nexus    44 Feb 10 18:29 jdk
+[nexus@NEXUS nexus-3.89.1-02]$ cd bin/
+[nexus@NEXUS bin]$ ll
+total 275996
+-rwxr-xr-x. 1 nexus nexus      6735 Feb 10 17:53 nexus
+-rw-r--r--. 1 nexus nexus      1325 Feb 10 17:53 nexus.vmoptions
+-rw-r--r--. 1 nexus nexus 282604548 Feb 10 18:28 sonatype-nexus-repository-3.89.1-02.jar
+[nexus@NEXUS bin]$ ./nexus start
+Starting nexus
+[nexus@NEXUS bin]$ 
+
+The NEXUS Dashboard will not be launched why because we take here Jenkins Security Group
+
+steps to be done for to Launch NEXUS Dashboard
+
+select NEXUS EC2-Instance-------> select security groups---------> select jenkins security group--------> select edit In-Bound Rule --------> give here port range
+up to 8081 like in port: 8080-8081 ----> save rules
+
+Now we can able to access the NEXUS Dashboard with NEXUS EC2-Instance Public IP & port number 8081
+
+like below
+
+http://13.222.146.43:8081/#admin/repository/repositories
+
+CHECK THE STATUS
+
+./nexus-3.79.0-09/bin/nexus status
+
+wait for 2 minutes and copy the public-ip of your nexus server and access it with 8081 port
+
+CLICK ON SIGN-IN
+
+
+
+IT WILL ASKS THE USER NAME & PASSWORD
+
+USERNAME: admin
+
+PASSWORD:
+
+cat /app/sonatype-work/nexus3/admin.password
+
+use this command in our server to get the password and paste it into our nexus dashboard
+
+
+
+Click on Next
+
+
+
+Setup new password and click on Next
+
+
+
+Select Enable anonymous access and click on Next
+
+
+
+Click on Finish
+
+
+
+NOW GO TO SERVER ADMINISTRATION AND CONFIGURATION
+
+
+
+SELECT REPOSITORIES
+
+
+
+SELECT CREATE-REPOSITORY
+
+
+
+SELECT MAVEN2(HOSTED)
+
+
+
+GIVE REPOSITORY NAME AS myrepo and deployment policy as Allow redeploy and click on create repositories
+
+
+
+
+
+now you can see our repository created in dashboard
+
+
+
+NOW GO TO JENKINS AND INSTALL PLUGIN "nexus artifactory uploader"
+
+
+
+Open the Jenkins job and configure the job, if you dont know how? you can refer this blog first
+
+https://devops-cicd.hashnode.dev/deploy-a-java-application-using-jenkins
+
+Go to build steps and select Nexus artifact uploader and add the nexus credentials
+
+
+
+
+
+Now click on Add artifact
+
+
+
+Now save the configurations and build the job. If the build gets success, then war file will gets stored on Nexus Repository.
+
+
+
+Now open the Nexus Repository
+
+Now Take one EC2-Instance for TOMCAT
+======================================
+
+Launch an Instance------> name:Tomcat------>kernel 6.1----------->c7i-flex-large---------> with keypair--------> jenkins security group---->
+25ebs ----> launch instances
+
+Launch and connect EC2-Instance
+
+vim tomcat.shyum install java-17-amazon-corretto -y
+wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz
+tar -zxvf apache-tomcat-9.0.115.tar.gz
+sed -i '56  a\<role rolename="manager-gui"/>' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '57  a\<role rolename="manager-script"/>' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '58  a\<user username="tomcat" password="admin@123" roles="manager-gui, manager-script"/>' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '59  a\</tomcat-users>' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '56d' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '21d' apache-tomcat-9.0.115/webapps/manager/META-INF/context.xml
+sed -i '22d'  apache-tomcat-9.0.115/webapps/manager/META-INF/context.xml
+sh apache-tomcat-9.0.115/bin/startup.sh
+
+:wq
+
+
+sh tomcat.sh-------> command to execute the file
+
+Tomcat started.
+[root@ip-172-31-91-46 ~]# 
+
+http://44.202.55.246:8080/
+
+Now we need to write pipeline for all stages
+
+create a pipeline job--------> pipeline----> ok
+
+pipeline {
+    agent any
+    tools {
+        maven 'mymaven'
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/pranay-devops666/one.git'
+            }
+        }
+        stage ("Build") {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage ("Artifact") {
+            steps {
+                nexusArtifactUploader artifacts: [[artifactId: 'myweb', classifier: '', file: 'target/myweb-8.7.1.war', type: 'war']], credentialsId: 'd84190a1-d689-4b21-ba9f-96eab0c31f43', groupId: 'in.javahome', nexusUrl: '13.222.146.43:8081/', nexusVersion: 'nexus3', protocol: 'http', repository: 'myrepo', version: '8.7.1'
+            }
+        }
+        stage ("Deploy") {
+            steps {
+                deploy adapters: [tomcat9(alternativeDeploymentContext: '', credentialsId: 'tom', path: '', url: 'http://44.202.55.246:8080/')], contextPath: 'myapp', war: 'target/*.war'
+            }
+        }
+    }
+}
+
+save & Build the Job
+
+
+Job pipeline for JENKINS PIPELINE(INTEGRATION WITH GIT, MAVEN, NEXUS & TOMCAT)
+===================================================================================
+
+
+
+pipeline {
+    agent any
+    tools {
+        maven 'mymaven'
+    }
+    stages {
+        stage('Code') {
+            steps {
+                git 'https://github.com/pranay-devops666/one.git'
+            }
+        }
+        stage ("Build") {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage ("Artifact") {
+            steps {
+                nexusArtifactUploader artifacts: [[artifactId: 'myweb', classifier: '', file: 'target/myweb-8.7.1.war', type: 'war']], credentialsId: 'final', groupId: 'in.javahome', nexusUrl: '98.93.188.54:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'thursday', version: '8.7.1'
+            }
+        }
+        stage ("Deploy") {
+            steps {
+                deploy adapters: [tomcat9(alternativeDeploymentContext: '', credentialsId: 'appserver', path: '', url: 'http://34.204.200.179:8080')], contextPath: 'myapp', war: 'target/*.war'
+            }
+        }
+    }
+}
+
+Application got Deployed successfully
+
+
+
+
+
+
+
