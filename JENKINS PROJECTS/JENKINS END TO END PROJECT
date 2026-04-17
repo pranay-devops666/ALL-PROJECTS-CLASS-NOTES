@@ -1,0 +1,474 @@
+Jenkins Class -12
+=======================
+
+TOPIC: JENKINS END TO END PROJECT
+===================================
+
+Jenkins Project link :
+https://devopsprojects77.hashnode.dev/jenkins-end-to-end-pipeline
+
+
+
+Jenkins End To End Pipeline Project
+=======================================
+
+Hey Pipeline Warriors, Welcome to this beginner-friendly guide where we walk through a real-world Jenkins pipeline
+- a mini project tailored for freshers to get hands-on experience with CI/CD. In today’s fast-paced DevOps world, mastering tools like Jenkins, 
+Git, Maven, SonarQube, Nexus, and Slack is essential. This blog will guide you through a step-by-step pipeline setup that mirrors industry practices.
+
+Architecture
+================
+
+CODE------->PUSH-------->PULL-----> CAQ(Sonar)------->BUILD(Maven)-----------> war--------> NEXUS------>war--------> TOMCAT
+
+Pipeline Stages
+================
+
+CODE-------> CAQ--------> BUILD-------> UNIT TEST--------> ARTIFACT---------> DEPLOY-------> POST BUILD
+
+Let’s break down the pipeline into stages, each serving a unique purpose in the CI/CD process:
+
+🧑‍💻 Stage 1: Code (Git)
+========================
+Our journey begins by fetching the latest source code from a Git repository. 
+This is the heart of any DevOps workflow -—→ version-controlled, collaborative, and reliable.
+
+🔍 Stage 2: CQA - Code Quality Analysis (SonarQube)
+=======================================================
+Before jumping into builds, we perform a static code analysis using SonarQube. This helps detect code smells, 
+bugs, and security vulnerabilities early in the pipeline.
+
+🏗️ Stage 3: Build & Unit Test (Maven)
+========================================
+We compile the code and run unit tests using Maven, ensuring that everything works as expected before proceeding. 
+This is a crucial step to catch any build-time issues.
+
+📦 Stage 4: Artifact (Nexus)
+==============================
+Once the build is successful, we package the application and upload the artifact to Nexus, 
+a repository manager that acts as a centralized storage for build artifacts.
+
+🚀 Stage 5: Deploy (Tomcat)
+==============================
+In this stage, the application is deployed to a staging or test environment. You can customize this depending on your infra, 
+for this demo, we kept it light and focused.
+
+📢 Stage 6: Post Build Actions (Slack Notification)
+=====================================================
+After everything is done, we notify the team on Slack with a success or failure message -- making communication seamless and transparent.
+
+Practical Implementation of Project
+Here i need 3 servers
+
+Jenkins
+
+AMI = Amazon Linux Kernel 5.10
+
+Instance type = t2.micro
+
+EBS = 8 GB
+
+Security Groups = SSH, 8080
+
+Tomcat
+
+AMI = Amazon Linux Kernel 5.10
+
+Instance type = t2.micro
+
+EBS = 8 GB
+
+Security Groups = SSH, 8080
+
+Nexus & Sonarqube
+
+AMI = Amazon Linux Kernel 5.10
+
+Instance type = t2.medium
+
+EBS = 22 GB
+
+Security Groups = SSH, 8081, 9000
+
+Lets launch 3 servers
+==========================
+
+1.JENKINS 2.TOMCAT 3. SONAR & NEXUS
+
+
+1. setup all the tools on their respective servers
+
+jenkins.sh
+
+ #STEP-1: INSTALLING GIT 
+ yum install git  -y
+
+ #STEP-2: GETTING THE REPO (jenkins.io --> download -- > redhat)
+ sudo wget -O /etc/yum.repos.d/jenkins.repo \
+     https://pkg.jenkins.io/redhat-stable/jenkins.repo
+ sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+
+ #STEP-3: DOWNLOAD JAVA11 AND JENKINS
+ yum install java-17-amazon-corretto -y
+ yum install jenkins -y
+
+ #STEP-4: RESTARTING JENKINS (when we download service it will on stopped state)
+ systemctl start jenkins.service
+ systemctl enable jenkins.service
+ systemctl status jenkins.service
+
+
+2. tomcat.sh
+
+ yum install java-17-amazon-corretto -y
+ wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.104/bin/apache-tomcat-9.0.104.tar.gz
+ tar -zxvf apache-tomcat-9.0.104.tar.gz
+ sed -i '56  a\<role rolename="manager-gui"/>' apache-tomcat-9.0.104/conf/tomcat-users.xml
+ sed -i '57  a\<role rolename="manager-script"/>' apache-tomcat-9.0.104/conf/tomcat-users.xml
+ sed -i '58  a\<user username="tomcat" password="admin@123" roles="manager-gui, manager-script"/>' apache-tomcat-9.0.104/conf/tomcat-users.xml
+ sed -i '59  a\</tomcat-users>' apache-tomcat-9.0.104/conf/tomcat-users.xml
+ sed -i '56d' apache-tomcat-9.0.104/conf/tomcat-users.xml
+ sed -i '21d' apache-tomcat-9.0.104/webapps/manager/META-INF/context.xml
+ sed -i '22d'  apache-tomcat-9.0.104/webapps/manager/META-INF/context.xml
+ sh apache-tomcat-9.0.104/bin/startup.sh
+
+
+3. sonar.sh
+
+ cd /opt/
+ wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-8.9.6.50800.zip
+ unzip sonarqube-8.9.6.50800.zip
+ yum install java-17-amazon-corretto -y
+ useradd sonar
+ chown sonar:sonar sonarqube-8.9.6.50800 -R
+ chmod 777 sonarqube-8.9.6.50800 -R
+ su - sonar
+
+ #run this on server manually
+ #sh /opt/sonarqube-8.9.6.50800/bin/linux-x86-64/sonar.sh start
+ #echo "user=admin & password=admin"
+
+
+4. nexus.sh
+
+ sudo yum update -y
+ sudo yum install wget -y
+ sudo yum install java-17-amazon-corretto-jmods -y
+ sudo mkdir /app && cd /app
+ sudo wget https://download.sonatype.com/nexus/3/nexus-3.79.1-04-linux-x86_64.tar.gz
+ sudo tar -xvf nexus-3.79.1-04-linux-x86_64.tar.gz
+ sudo mv nexus-3.79.1-04 nexus
+ sudo adduser nexus
+ sudo chown -R nexus:nexus /app/nexus
+ sudo chown -R nexus:nexus /app/sonatype*
+ sudo sed -i '27  run_as_user="nexus"' /app/nexus/bin/nexus
+ sudo tee /etc/systemd/system/nexus.service > /dev/null << EOL
+ [Unit]
+ Description=nexus service
+ After=network.target
+
+ [Service]
+ Type=forking
+ LimitNOFILE=65536
+ User=nexus
+ Group=nexus
+ ExecStart=/app/nexus/bin/nexus start
+ ExecStop=/app/nexus/bin/nexus stop
+ User=nexus
+ Restart=on-abort
+
+ [Install]
+ WantedBy=multi-user.target
+ EOL
+ sudo chkconfig nexus on
+ sudo systemctl start nexus
+ sudo systemctl enable nexus
+ sudo systemctl status nexus
+
+
+Create a repository in nexus
+
+SELECT REPOSITORIES
+
+SELECT CREATE-REPOSITORY
+
+SELECT MAVEN2(HOSTED)
+
+GIVE REPOSITORY NAME AS myrepo and deployment policy as Allow redeploy and click on create repositories
+
+now you can see our repository created in dashboard
+
+After setting all the tools using above scripts, now we have to integrate with Jenkins. Lets install the following plugins to deploy an application.
+
+After installing all the plugins, Lets integrate sonarqube
+
+go to manage jenkins » system » and search for SonarQube servers
+
+Name: mysonar
+
+Server URL : sonarqube server url
+
+For credentials, click on add
+
+kind : secret text
+
+Now it will ask the secret. To get the secret go to sonarqube dashboard and select your profile and click on My Account
+
+Go to security tab
+
+Enter any token-name and click on Generate
+
+copy the token and paste it on credentials tab on jenkins
+
+Now click on add and select the credentials
+
+Now lets go to manage jenkins » tools
+
+After adding maven and sonar tools, just click on save
+
+Create a Free slack account
+Enter your company name
+
+Click on Next
+
+Click on next
+
+Add your teammate mail id’sEnter project name
+
+Select the free limited version
+
+Now click on your company name (Mini-Project) » Tools & Settings » Manage apps
+
+Now search for jenkins CI
+
+Now click on add to slack
+
+Now select the channel
+
+click on Add Jenkins CI Integration
+
+From the step-3 copy the Team subdomain & Token
+Go back to Jenkins and manage jenkins and search for slack
+
+Workspace : miniproject-cao6485
+
+Credentials ——> kind: Secret (add that token here)
+
+Now add tomcat and nexus credentials
+go to manage jenkins » credentials » system » Global credentials (unrestricted)
+Click on Add Credentials
+
+click on Create
+
+Click on Add Credentials again
+click on Create, you can see the list of credentials like this
+
+After adding the credentials, you can write the pipeline like this
+
+pipeline {
+    agent any
+    tools {
+        maven "mymaven"
+    }
+    stages {
+        stage('Code') {
+            steps {
+                git "https://github.com/devops0014/one.git"
+            }
+        }
+        stage ("CQA") {
+            steps {
+                withSonarQubeEnv('mysonar') {
+                    sh '''
+                        mvn sonar:sonar \
+                        -Dsonar.projectKey=MyProject \
+                        -Dsonar.host.url=<your-sonar-url>
+                        -Dsonar.login=<enter-your-token>
+                    '''
+                }
+            }
+        }
+        stage ("Build") {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage ("Artifact") {
+            steps {
+                nexusArtifactUploader artifacts: [[artifactId: 'myweb', classifier: '', file: 'target/myweb-8.7.3.war', type: '8.7.3']], credentialsId: 'nexus', groupId: 'in.javahome', nexusUrl: '<your-nexus-url>', nexusVersion: 'nexus3', protocol: 'http', repository: 'myrepo', version: '8.7.3'
+            }
+        }
+        stage ("Deploy") {
+            steps {
+                deploy adapters: [tomcat9(credentialsId: 'tomcat', path: '', url: '<your-tomcat-url>')], contextPath: 'myapp', war: 'target/*.war'
+            }
+        }
+        post {
+            always {
+                echo 'Slack Notifications'
+                slackSend (
+                    channel: '<your-channel-name>', message: "*${currentBuild.currentResult}:* Job ${env.JOB_NAME} \n build ${env.BUILD_NUMBER} \n More info at: ${env.BUILD_URL}"
+                )
+            }
+        }
+    }
+}
+
+
+PIPELINE OUTPUT:
+
+SONAR OUTPUT:
+
+NEXUS OUTPUT:
+
+TOMCAT OUTPUT:
+
+SLACK NOTIFICATION:
+
+
+Conclusion
+And that’s a wrap! 🎉
+Through this mini Jenkins pipeline project, you’ve touched key DevOps concepts and tools — from source control and quality checks to builds, 
+artifact management, and team communication. As a fresher, building such pipelines gives you a head start in understanding the DevOps culture of automation 
+and feedback.
+
+Stay curious, keep automating, and happy building! 💻⚙️
+
+If you found this blog helpful for your interviews or in learning Docker troubleshooting, please hit a heart for 10 times and drop a comment!
+Your support motivates me to create more content on DevOps and related topics. ❤️
+
+
+
+
+REAL PRACTICE STARTS HERE FROM BELOW
+=======================================
+
+Here i need 3 servers
+
+1.Jenkins
+
+AMI = Amazon Linux Kernel 5.10--------->Instance type = c7i-flex-large------>EBS = 8 GB------->Security Groups = SSH, 8080
+
+2.Tomcat
+
+AMI = Amazon Linux Kernel 5.10------>Instance type = c7i-flex-large------->EBS = 8 GB--------->Security Groups = SSH, 8080
+
+3.Nexus 
+
+AMI = Amazon Linux Kernel 5.10--------> Instance type = c7i-flex-large----->EBS = 22 GB------->Security Groups = SSH, 8081, 9000
+
+4. Sonarqube
+
+AMI = Amazon Linux Kernel 5.10--------> Instance type = c7i-flex-large----->EBS = 22 GB------->Security Groups = SSH, 8081, 9000
+
+
+Lets launch 4 servers and connect
+
+code -------> CQA------> BUILD--------> TEST-----> ARTIFACT-----> DEPLOY-------> POST E-mail notification
+
+
+
+pipeline {
+    agent any
+    tools {
+        maven 'mymaven'
+    }
+    stages {
+        stage ('Code') {
+            steps {
+                git 'https://github.com/pranay-devops666/one.git'
+            }
+        }
+        stage ("CAQ") {
+            steps {
+                withSonarQubeEnv('mysonar') {
+                        sh '''
+                            mvn sonar:sonar \
+                            -Dsonar.projectKey=MyProject \
+                            -Dsonar.host.url=http://54.224.162.69:9000 \
+                            -Dsonar.login=96a24e0e0255ef376ba1dcac127e84ce3eadd654
+                            '''
+                }
+            }
+        }
+        stage ("Build&Test") {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage ("Artifact") {
+            steps {
+                nexusArtifactUploader artifacts: [[artifactId: 'myweb', classifier: '', file: 'target/myweb-8.7.1.war', type: 'war']], credentialsId: 'nexus', groupId: 'in.javahome', nexusUrl: '3.90.8.196:8081/', nexusVersion: 'nexus3', protocol: 'http', repository: 'MyRepo', version: '8.7.1'
+            }
+        }
+        stage ("Deploy") {
+            steps {
+                deploy adapters: [tomcat9(alternativeDeploymentContext: '', credentialsId: 'tom', path: '', url: 'http://3.85.20.78:8080/')], contextPath: 'myapp', war: 'target/*.war'
+            }
+        }
+    }
+}
+
+
+save & Build
+
+
+pipeline {
+    agent any
+    tools {
+        maven 'mymaven'
+    }
+    stages {
+        stage ('Code') {
+            steps {
+                git 'https://github.com/pranay-devops666/one.git'
+            }
+        }
+        stage ("CAQ") {
+            steps {
+                withSonarQubeEnv('mysonar') {
+                        sh '''
+                            mvn sonar:sonar \
+                            -Dsonar.projectKey=MyProject \
+                            -Dsonar.host.url=http://54.224.162.69:9000 \
+                            -Dsonar.login=96a24e0e0255ef376ba1dcac127e84ce3eadd654
+                            '''
+                }
+            }
+        }
+        stage ("Build&Test") {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage ("Artifact") {
+            steps {
+                nexusArtifactUploader artifacts: [[artifactId: 'myweb', classifier: '', file: 'target/myweb-8.7.1.war', type: 'war']], credentialsId: 'nexus', groupId: 'in.javahome', nexusUrl: '3.90.8.196:8081/', nexusVersion: 'nexus3', protocol: 'http', repository: 'MyRepo', version: '8.7.1'
+            }
+        }
+        stage ("Deploy") {
+            steps {
+                deploy adapters: [tomcat9(alternativeDeploymentContext: '', credentialsId: 'tom', path: '', url: 'http://3.85.20.78:8080/')], contextPath: 'myapp', war: 'target/*.war'
+            }
+        }
+    }
+    post {
+    success {
+      mail to: 'gorantlapranay8@gmail.com',
+           subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+           body: "Good news — build succeeded!\n${env.BUILD_URL}"
+    }
+    failure {
+      mail to: 'gorantlapranay8@gmail.com',
+           subject: "PIPELINE STATUS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+           body: "*${currentBuild.current Result}: * Job ${env.JOB_NAME} \n build ${env.BUILD_NUMBER} \n more info at: ${env.BUILD_URL}"
+    }
+  }
+}
+
+
+
+
+
+
+Save and Build
