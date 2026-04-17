@@ -1,0 +1,877 @@
+Docker Class -06
+=====================
+
+TOPIC: 3-TIER APP DEPLOYMENT & Dockerhub pushing images
+===========================================================
+
+3-TIER APP DEPLOYMENT USING JENKINS AND DOCKERFILE REGISTRY
+
+Lets Launch one EC-2Instance-----------> Name:Docker------------->Instance type:c7i-flex-large----------> with key pair---------> jenkins security group------->
+------------> 25gb ebs ---------------. launch EC2-Instance
+
+Launch and connect EC2-Instance
+
+3-Tier Application ---------------------> means going to deploy Frontend(In Real Time Technically called as Presentaion Tier as Client), 
+Backend (In Real Time Technically called as Login Tier as Server) and Database (In Real Time Technically called as Data Tier as Database) 
+having of these 3 called as 3-Tier-Application.
+
+first install Docker, java-17, git and maven 
+
+
+[root@ip-172-31-90-22 ~]# yum install docker -y && systemctl restart docker --------------> command to install docker and restart the docker as well
+[root@ip-172-31-90-22 ~]# yum install git -y -----------------------------------------> command to install git 
+[root@ip-172-31-90-22 ~]# yum install java-17-amazon-corretto -y ---------------------------> command to install java-17th version
+[root@ip-172-31-90-22 ~]# yum install maven -y ---------------------------> command to install maven
+
+[root@ip-172-31-90-22 ~]# git clone https://github.com/pranay-devops666/dockerwebapp.git ----------------> command to get/clone the code from github(central) to git(local)
+Cloning into 'dockerwebapp'...
+remote: Enumerating objects: 264, done.
+remote: Total 264 (delta 0), reused 0 (delta 0), pack-reused 264 (from 1)
+Receiving objects: 100% (264/264), 3.68 MiB | 94.13 MiB/s, done.
+Resolving deltas: 100% (86/86), done.
+[root@ip-172-31-90-22 ~]# ll ----------------------------------------------> command to see long list files
+total 0
+drwxr-xr-x. 3 root root 35 Mar  9 07:32 dockerwebapp
+[root@ip-172-31-90-22 ~]# cd dockerwebapp/ ---------------------------> command to go to the folder
+[root@ip-172-31-90-22 dockerwebapp]# ll ----------------------------------------------> command to see long list files
+total 4
+-rw-r--r--. 1 root root 14 Mar  9 07:32 README.md
+[root@ip-172-31-90-22 dockerwebapp]# git checkout master --------------------------------> command to go to master branch
+branch 'master' set up to track 'origin/master'.
+Switched to a new branch 'master'
+[root@ip-172-31-90-22 dockerwebapp]# git branch ------------------------> command to check in which branch we are present in
+  main
+* master
+[root@ip-172-31-90-22 dockerwebapp]# ll
+total 12
+drwxr-xr-x. 3 root root   42 Mar  9 07:36 Docker-app
+drwxr-xr-x. 2 root root   45 Mar  9 07:36 Docker-db
+-rw-r--r--. 1 root root  225 Mar  9 07:36 compose.yml
+drwxr-xr-x. 2 root root   57 Mar  9 07:36 manifests
+-rw-r--r--. 1 root root 7252 Mar  9 07:36 pom.xml
+drwxr-xr-x. 4 root root   30 Mar  9 07:36 src
+
+cd dockerwebapp --------> in this github repo we will have 2 main folders 
+1. Docker-app ----------> for application code
+2. Docker-db -----------> for database code
+git checkout master
+mvn clean package
+
+Now we need to Build the code like below
+
+[root@ip-172-31-90-22 dockerwebapp]# mvn clean package ---------------------------> command to build the code with maven 
+
+following output for build the code with maven
+=================================================
+[INFO] Packaging webapp
+[INFO] Assembling webapp [vprofile] in [/root/dockerwebapp/target/vprofile-v2]
+[INFO] Processing war project
+[INFO] Copying webapp resources [/root/dockerwebapp/src/main/webapp]
+[INFO] Building war: /root/dockerwebapp/target/vprofile-v2.war
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  25.561 s
+[INFO] Finished at: 2026-03-09T07:38:42Z
+[INFO] ------------------------------------------------------------------------
+[root@ip-172-31-90-22 dockerwebapp]# 
+
+BUILD GOT SUCCESS
+
+after build got success we will get war file in target folder
+
+
+go to folder name as Docker-app
+cd Docker-app
+remove this file multistage
+rm -rf multistage
+
+[root@ip-172-31-90-22 dockerwebapp]# ll ---------------------------> command to view long list files
+total 28
+drwxr-xr-x.  3 root root    42 Mar  9 07:36 Docker-app
+drwxr-xr-x.  2 root root    45 Mar  9 07:36 Docker-db
+-rw-r--r--.  1 root root   225 Mar  9 07:36 compose.yml
+drwxr-xr-x.  2 root root    57 Mar  9 07:36 manifests
+-rw-r--r--.  1 root root  7252 Mar  9 07:36 pom.xml
+drwxr-xr-x.  4 root root    30 Mar  9 07:36 src
+drwxr-xr-x. 10 root root 16384 Mar  9 07:38 target
+[root@ip-172-31-90-22 dockerwebapp]# cd Docker-app/ ---------------------------> command to go to the folder
+[root@ip-172-31-90-22 Docker-app]# ll  ---------------------------> command to view long list files
+total 4
+-rw-r--r--. 1 root root 165 Mar  9 07:36 Dockerfile
+drwxr-xr-x. 2 root root  24 Mar  9 07:36 multistage
+[root@ip-172-31-90-22 Docker-app]# rm -rf multistage/ ------------------------> command to remove the file with name multistage
+[root@ip-172-31-90-22 Docker-app]# ll  ---------------------------> command to view long list files
+total 4
+-rw-r--r--. 1 root root 165 Mar  9 07:36 Dockerfile
+[root@ip-172-31-90-22 Docker-app]#
+
+here we need to write Dockerfile
+
+vim Dockerfile -------------------------------> command to create Dockerfile
+
+FROM tomcat:8-jre11
+RUN rm -rf /usr/local/tomcat/webapps/*
+COPY target/vprofile-v2.war /usr/local/tomcat/webapps/ROOT.war
+EXPOSE 8080
+CMD ["catalina.sh", "run"]
+
+:wq -------------------------------------------> save & Quit from a file
+
+dont build Dcokerfile here why because target folder is not there here 
+we need to copy the target folder to here first by giving command as below
+
+go to dockerwebapp folder first
+=================================
+
+cd .. --------------------------------------> command to go to last folder
+cp -r target Docker-app -------------------------------> command to copy the folder and giving persions also with -r 
+now go to Docker-app -
+cd Docker-app --------------------------> command to go to the folder
+
+[root@ip-172-31-90-22 dockerwebapp]# ll ---------------------------> command to view long list files
+total 28
+drwxr-xr-x.  2 root root    24 Mar  9 07:49 Docker-app
+drwxr-xr-x.  2 root root    45 Mar  9 07:36 Docker-db
+-rw-r--r--.  1 root root   225 Mar  9 07:36 compose.yml
+drwxr-xr-x.  2 root root    57 Mar  9 07:36 manifests
+-rw-r--r--.  1 root root  7252 Mar  9 07:36 pom.xml
+drwxr-xr-x.  4 root root    30 Mar  9 07:36 src
+drwxr-xr-x. 10 root root 16384 Mar  9 07:38 target
+[root@ip-172-31-90-22 dockerwebapp]# cd target/ ------------------------------> command to go to the target folder
+[root@ip-172-31-90-22 target]# ll -----------------------------------------------> command to view long list files
+total 47456
+drwxr-xr-x. 3 root root      116 Mar  9 07:38 classes
+drwxr-xr-x. 3 root root       25 Mar  9 07:38 generated-sources
+drwxr-xr-x. 3 root root       30 Mar  9 07:38 generated-test-sources
+-rw-r--r--. 1 root root    87074 Mar  9 07:38 jacoco.exec
+drwxr-xr-x. 2 root root       28 Mar  9 07:38 maven-archiver
+drwxr-xr-x. 3 root root       35 Mar  9 07:38 maven-status
+drwxr-xr-x. 2 root root    16384 Mar  9 07:38 surefire-reports
+drwxr-xr-x. 3 root root       17 Mar  9 07:38 test-classes
+drwxr-xr-x. 5 root root       54 Mar  9 07:38 vprofile-v2
+-rw-r--r--. 1 root root 48486470 Mar  9 07:38 vprofile-v2.war
+[root@ip-172-31-90-22 target]# cd .. ----------------------------------------> command to go to the previous folder
+[root@ip-172-31-90-22 dockerwebapp]# ll -----------------------------------------> command to view long list files
+total 28
+drwxr-xr-x.  2 root root    24 Mar  9 07:49 Docker-app
+drwxr-xr-x.  2 root root    45 Mar  9 07:36 Docker-db
+-rw-r--r--.  1 root root   225 Mar  9 07:36 compose.yml
+drwxr-xr-x.  2 root root    57 Mar  9 07:36 manifests
+-rw-r--r--.  1 root root  7252 Mar  9 07:36 pom.xml
+drwxr-xr-x.  4 root root    30 Mar  9 07:36 src
+drwxr-xr-x. 10 root root 16384 Mar  9 07:38 target
+[root@ip-172-31-90-22 dockerwebapp]# cp -r target Docker-app -------------------------> command to copy the target folder from dockerwebapp folder to Docker-app folder
+[root@ip-172-31-90-22 dockerwebapp]# ll -------------------------------------------------------> command to view long list files
+total 28
+drwxr-xr-x.  3 root root    38 Mar  9 07:50 Docker-app
+drwxr-xr-x.  2 root root    45 Mar  9 07:36 Docker-db
+-rw-r--r--.  1 root root   225 Mar  9 07:36 compose.yml
+drwxr-xr-x.  2 root root    57 Mar  9 07:36 manifests
+-rw-r--r--.  1 root root  7252 Mar  9 07:36 pom.xml
+drwxr-xr-x.  4 root root    30 Mar  9 07:36 src
+drwxr-xr-x. 10 root root 16384 Mar  9 07:38 target
+[root@ip-172-31-90-22 dockerwebapp]# cd Docker-app/ -------------------------> command to go to the folder name with Dockerapp
+[root@ip-172-31-90-22 Docker-app]# ll ----------------------------------------------------> command to view long list files
+total 20
+-rw-r--r--.  1 root root   161 Mar  9 07:49 Dockerfile
+drwxr-xr-x. 10 root root 16384 Mar  9 07:50 target
+[root@ip-172-31-90-22 Docker-app]# cd ..  ----------------------------------------> command to go to the previous folder
+[root@ip-172-31-90-22 dockerwebapp]# 
+
+
+
+now build the dockerfile here like below
+===========================================
+
+[root@ip-172-31-90-22 Docker-app]# docker build -t appimage .   --------------------------------------------> command to build the Dockerfile to get an Image
+[+] Building 37.5s (8/8) FINISHED                                                                                                                       docker:default
+ => [internal] load build definition from Dockerfile                                                                                                              0.0s
+ => => transferring dockerfile: 260B                                                                                                                              0.0s
+ => [internal] load metadata for docker.io/library/tomcat:8-jre11                                                                                                 0.4s
+ => [internal] load .dockerignore                                                                                                                                 0.0s
+ => => transferring context: 2B                                                                                                                                   0.0s
+ => [1/3] FROM docker.io/library/tomcat:8-jre11@sha256:ec587bbb46ba5403d4c8c416e672098d0b13234842c0a3177f0bc764ebea191a                                          36.5s
+ => => resolve docker.io/library/tomcat:8-jre11@sha256:ec587bbb46ba5403d4c8c416e672098d0b13234842c0a3177f0bc764ebea191a                                           0.0s
+ => => sha256:cfcf356fa6e6902e661a53c29cf3b351f284090cb2c0de2ad6c5c238a6fdb9a8 12.90MB / 12.90MB                                                                  0.2s
+ => => sha256:1ebe53dfffc2d3bdd2674be955884148aa53208e5f572b8c0acc5df9354c27a3 47.07MB / 47.07MB                                                                  0.7s
+ => => sha256:23828d760c7b04df02891af556c40ca44c2dd79d6837ea6f18fac24f4108448c 30.45MB / 30.45MB                                                                  0.4s
+ => => sha256:ec587bbb46ba5403d4c8c416e672098d0b13234842c0a3177f0bc764ebea191a 1.21kB / 1.21kB                                                                    0.0s
+ => => sha256:8416733e1d4b94dbf21a331ee1ba6aabc96127c860d878bc1999464cea6fbbb9 2.20kB / 2.20kB                                                                    0.0s
+ => => sha256:9490c5c613cfc3593c6a9a7d3660c77223855d7b16e21d9b07c86227a6e6bbfa 11.92kB / 11.92kB                                                                  0.0s
+ => => sha256:b76fad4fd1df3f49092ab8c370d96c7a5b3bdf414b6048adb15d9d3ca2f329cf 160B / 160B                                                                        0.3s
+ => => sha256:d8daa0bdf72a85819c3b771d6a2ade0c79d25a2ae67e6d90ec7a2965716161cb 733B / 733B                                                                       35.7s
+ => => sha256:2fbbd22455d07d61f892610824175b333dbc830aaf957ba796248bd7d9a94779 174B / 174B                                                                        0.4s
+ => => extracting sha256:23828d760c7b04df02891af556c40ca44c2dd79d6837ea6f18fac24f4108448c                                                                         0.7s
+ => => sha256:c71aa0bb99bbdf2ae0fe6fd2a9b337a8fa9cfa2af5505a067c84a2ca4437a62d 11.48MB / 11.48MB                                                                  0.8s
+ => => sha256:0143113c3abc7ab1b596a523f4f5bd7888ce2a4c5a2c388619846fc2fcb5663e 130B / 130B                                                                        0.8s
+ => => sha256:30eca734858cf6ae98a84fe67be2a5ff94de635ded80c692d9482368f48f7290 479.84kB / 479.84kB                                                                0.9s
+ => => extracting sha256:cfcf356fa6e6902e661a53c29cf3b351f284090cb2c0de2ad6c5c238a6fdb9a8                                                                         0.5s
+ => => extracting sha256:1ebe53dfffc2d3bdd2674be955884148aa53208e5f572b8c0acc5df9354c27a3                                                                         0.7s
+ => => extracting sha256:b76fad4fd1df3f49092ab8c370d96c7a5b3bdf414b6048adb15d9d3ca2f329cf                                                                         0.0s
+ => => extracting sha256:d8daa0bdf72a85819c3b771d6a2ade0c79d25a2ae67e6d90ec7a2965716161cb                                                                         0.0s
+ => => extracting sha256:2fbbd22455d07d61f892610824175b333dbc830aaf957ba796248bd7d9a94779                                                                         0.0s
+ => => extracting sha256:c71aa0bb99bbdf2ae0fe6fd2a9b337a8fa9cfa2af5505a067c84a2ca4437a62d                                                                         0.2s
+ => => extracting sha256:30eca734858cf6ae98a84fe67be2a5ff94de635ded80c692d9482368f48f7290                                                                         0.0s
+ => => extracting sha256:0143113c3abc7ab1b596a523f4f5bd7888ce2a4c5a2c388619846fc2fcb5663e                                                                         0.0s
+ => [internal] load build context                                                                                                                                 0.3s
+ => => transferring context: 48.50MB                                                                                                                              0.3s
+ => [2/3] RUN rm -rf /usr/local/tomcat/webapps/*                                                                                                                  0.3s
+ => [3/3] COPY target/vprofile-v2.war /usr/local/tomcat/webapps/ROOT.war                                                                                          0.1s
+ => exporting to image                                                                                                                                            0.1s
+ => => exporting layers                                                                                                                                           0.1s
+ => => writing image sha256:fc8586461e4538d8506149cd6c3b41e071997fcd954da17dd661a8337fea2848                                                                      0.0s
+ => => naming to docker.io/library/appimage                                                                                                                       0.0s
+[root@ip-172-31-90-22 Docker-app]# docker images -----------------------------------> command to see list of Images
+REPOSITORY   TAG       IMAGE ID       CREATED          SIZE
+appimage     latest    fc8586461e45   54 seconds ago   323MB
+[root@ip-172-31-90-22 Docker-app]# 
+
+now go to dockerwebapp folder again
+=======================================
+
+[root@ip-172-31-90-22 Docker-app]# cd .. -------------------------------------> command to go to previous folder
+[root@ip-172-31-90-22 dockerwebapp]# ll ---------------------------------------------> command to see long list files
+total 28
+drwxr-xr-x.  3 root root    38 Mar  9 08:00 Docker-app
+drwxr-xr-x.  2 root root    45 Mar  9 07:36 Docker-db
+-rw-r--r--.  1 root root   225 Mar  9 07:36 compose.yml
+drwxr-xr-x.  2 root root    57 Mar  9 07:36 manifests
+-rw-r--r--.  1 root root  7252 Mar  9 07:36 pom.xml
+drwxr-xr-x.  4 root root    30 Mar  9 07:36 src
+drwxr-xr-x. 10 root root 16384 Mar  9 07:38 target
+[root@ip-172-31-90-22 dockerwebapp]# cd Docker-db/ -------------------------------------> command to go to folder name Docker-db
+[root@ip-172-31-90-22 Docker-db]# ll  ---------------------------------------------> command to see long list files
+total 12
+-rw-r--r--. 1 root root  150 Mar  9 07:36 Dockerfile
+-rw-r--r--. 1 root root 6176 Mar  9 07:36 db_backup.sql
+[root@ip-172-31-90-22 Docker-db]# vim Dockerfile  -------------------------------------------------> command to create a Dockerfile
+[root@ip-172-31-90-22 Docker-db]# 
+
+now here we need to write Dockerfile here
+===========================================
+
+[root@ip-172-31-90-22 Docker-db]# vim Dockerfile ------------------------------------> command to create a Dockerfile
+
+FROM mysql:5.7.25
+
+ENV MYSQL_ROOT_PASSWORD="devopspassword"
+ENV MYSQL_DATABASE="accounts"
+
+ADD db_backup.sql docker-entrypoint-initdb.d/db_backup.sql
+
+:wq  -------------------------------------------> command to save and Quit from the file
+
+now build the Dockerfile here
+===================================
+
+[root@ip-172-31-90-22 Docker-db]# docker build -t dbimage .    ----------------------------------------------> command to build an Dockerfile to get an Image
+[+] Building 5.4s (7/7) FINISHED                                                                                                                        docker:default
+ => [internal] load build definition from Dockerfile                                                                                                              0.0s
+ => => transferring dockerfile: 249B                                                                                                                              0.0s
+ => [internal] load metadata for docker.io/library/mysql:5.7.25                                                                                                   0.4s
+ => [internal] load .dockerignore                                                                                                                                 0.0s
+ => => transferring context: 2B                                                                                                                                   0.0s
+ => [1/2] FROM docker.io/library/mysql:5.7.25@sha256:dba5fed182e64064b688ccd22b2f9cad4ee88608c82f8cff21e17bab8da72b81                                             3.3s
+ => => resolve docker.io/library/mysql:5.7.25@sha256:dba5fed182e64064b688ccd22b2f9cad4ee88608c82f8cff21e17bab8da72b81                                             0.0s
+ => => sha256:864c283b3c4b58961fdf887856867c24700693e7555a3a020e1992c6e029023f 1.74kB / 1.74kB                                                                    0.1s
+ => => sha256:cea281b2278b202d4fd44dc7222f05fdeb186fa034bad0832ab8883d09161794 4.50MB / 4.50MB                                                                    0.2s
+ => => sha256:8f856c14f5af658776d95c68474536c000309aebfb011137024818fda95660b5 1.27MB / 1.27MB                                                                    0.1s
+ => => sha256:dba5fed182e64064b688ccd22b2f9cad4ee88608c82f8cff21e17bab8da72b81 434B / 434B                                                                        0.0s
+ => => sha256:27833a3ba0a545deda33bb01eaf95a14d05d43bf30bce9267d92d17f069fe897 22.50MB / 22.50MB                                                                  0.3s
+ => => sha256:e889999df625a5a358a03cc433057cb5a8d3de17fbe11a70964da0eb9c7677b1 2.62kB / 2.62kB                                                                    0.0s
+ => => sha256:98455b9624a96e32b353297bb312913b6bbd62ac195cea2c7dd477209ba572d6 6.99kB / 6.99kB                                                                    0.0s
+ => => sha256:1b810e1751b3067ff7e263d8193dcdad3c7602b78fad55e9949462718b61fe13 12.11MB / 12.11MB                                                                  0.3s
+ => => sha256:5479aaef3d30bebedd2cb6682949a950f2d4df56c92b7c037e40eeb6dbec98b1 26.08kB / 26.08kB                                                                  0.2s
+ => => sha256:9c4f38c23b6fecb377135b2caa1b932c328d3e78aa1529fd34e4816fffdd9130 115B / 115B                                                                        0.1s
+ => => extracting sha256:27833a3ba0a545deda33bb01eaf95a14d05d43bf30bce9267d92d17f069fe897                                                                         0.7s
+ => => sha256:1d924ec3d520e4d7a7c9b20e71b814a9c3b0279620074ea4d778a12c960dd3ed 225B / 225B                                                                        0.3s
+ => => sha256:1ab7ae63ac60fbac1fe3febdf0c024fea01d69efb9fa31833d85cd6d315c6d73 83.49MB / 83.49MB                                                                  1.9s
+ => => sha256:08aa5f3680e94de0fedeafcb32c6c2a234083be3190b856fbd5c60da8e06d52a 2.88kB / 2.88kB                                                                    0.3s
+ => => sha256:a832d0a0972add8c1ebb637fc77685cebf2e862cd51619cdd3ccd0cdc98374c3 121B / 121B                                                                        0.4s
+ => => extracting sha256:864c283b3c4b58961fdf887856867c24700693e7555a3a020e1992c6e029023f                                                                         0.0s
+ => => extracting sha256:cea281b2278b202d4fd44dc7222f05fdeb186fa034bad0832ab8883d09161794                                                                         0.1s
+ => => extracting sha256:8f856c14f5af658776d95c68474536c000309aebfb011137024818fda95660b5                                                                         0.0s
+ => => extracting sha256:9c4f38c23b6fecb377135b2caa1b932c328d3e78aa1529fd34e4816fffdd9130                                                                         0.0s
+ => => extracting sha256:1b810e1751b3067ff7e263d8193dcdad3c7602b78fad55e9949462718b61fe13                                                                         0.4s
+ => => extracting sha256:5479aaef3d30bebedd2cb6682949a950f2d4df56c92b7c037e40eeb6dbec98b1                                                                         0.0s
+ => => extracting sha256:1d924ec3d520e4d7a7c9b20e71b814a9c3b0279620074ea4d778a12c960dd3ed                                                                         0.0s
+ => => extracting sha256:1ab7ae63ac60fbac1fe3febdf0c024fea01d69efb9fa31833d85cd6d315c6d73                                                                         1.2s
+ => => extracting sha256:08aa5f3680e94de0fedeafcb32c6c2a234083be3190b856fbd5c60da8e06d52a                                                                         0.0s
+ => => extracting sha256:a832d0a0972add8c1ebb637fc77685cebf2e862cd51619cdd3ccd0cdc98374c3                                                                         0.0s
+ => [internal] load build context                                                                                                                                 0.0s
+ => => transferring context: 6.28kB                                                                                                                               0.0s
+ => [2/2] ADD db_backup.sql docker-entrypoint-initdb.d/db_backup.sql                                                                                              1.6s
+ => exporting to image                                                                                                                                            0.0s
+ => => exporting layers                                                                                                                                           0.0s
+ => => writing image sha256:485477282a4be3128d2540269eb970ccea25fd7b4d578044d10fe1d968f6cfec                                                                      0.0s
+ => => naming to docker.io/library/dbimage                                                                                                                        0.0s
+[root@ip-172-31-90-22 Docker-db]# docker images -------------------------------------------------> command to see list of Images
+REPOSITORY   TAG       IMAGE ID       CREATED          SIZE
+dbimage      latest    485477282a4b   21 seconds ago   372MB
+appimage     latest    fc8586461e45   5 minutes ago    323MB
+[root@ip-172-31-90-22 Docker-db]# 
+
+
+now we got here 2 images 
+===========================
+
+1. appimage in Docker-app folder
+2. dbimage in Docker-db folder
+based on these 2 images we need to create a container to run tha application 
+
+here the sigma rule scenoria is  always first we need to create database
+
+[root@ip-172-31-90-22 Docker-db]# docker run -d --name devopsdb -p 3306:3306 dbimage ---------------------------> command to create a container for db
+a00a6c196cee84d27db8ab4461fe71b37ca4f52f29fc0715488e3865d359a604
+[root@ip-172-31-90-22 Docker-db]# docker ps ------------------------------------------> command to check list of containers
+CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS         PORTS                                                  NAMES
+a00a6c196cee   dbimage   "docker-entrypoint.s…"   4 seconds ago   Up 4 seconds   0.0.0.0:3306->3306/tcp, :::3306->3306/tcp, 33060/tcp   devopsdb
+[root@ip-172-31-90-22 Docker-db]# docker ps -a ------------------------------------------> command to check list of containers only running containers
+CONTAINER ID   IMAGE     COMMAND                  CREATED         STATUS         PORTS                                                  NAMES
+a00a6c196cee   dbimage   "docker-entrypoint.s…"   9 seconds ago   Up 8 seconds   0.0.0.0:3306->3306/tcp, :::3306->3306/tcp, 33060/tcp   devopsdb
+[root@ip-172-31-90-22 Docker-db]# docker ps -a -q -------------------------------------> command to check list of containers with containers IDs only
+a00a6c196cee---------------------> this is the output of container ID
+
+
+
+docker run -d --name devopsdb -p 3306:3306 dbimage ----------------------------------------> (in here containername must be devopsdb only and should use -d only, 
+should not use -itd while creating a container)
+
+docker exec -it devopsdb bash  ----------------------------------> command to enter into a container
+
+[root@ip-172-31-90-22 Docker-db]# docker exec -it devopsdb bash   ----------------------------------> command to enter into a container
+root@a00a6c196cee:/# mysql -u root -p ------------------------------------------------------------------------> command to  login into a database
+Enter password:  ---------------------------------------> password:devopspassword (if we open Dockerfile in Docker-db dolder we can see credentials)
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 2
+Server version: 5.7.25 MySQL Community Server (GPL)
+
+Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> show databases;  -----------------------------------------------------------> command to show tables
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| accounts           |
+| mysql              |
+| performance_schema |
+| sys                |
++--------------------+
+5 rows in set (0.00 sec)
+
+mysql> use accounts; ------------------------------------------------------> command to view accounts
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql> show tables; -------------------------------------------------------> command to show tables
++--------------------+
+| Tables_in_accounts |
++--------------------+
+| role               |
+| user               |
+| user_role          |
++--------------------+
+3 rows in set (0.00 sec)
+
+
+for example if we kept any data in application it will store in user
+if we want to see means command is below
+
+select *from user; --------> to view data in confused order
+select *from user\G;  --------> to view data in table order
+
+if we give ctrl+d 2 times we can do exit from the container
+mysql> 
+mysql> select * from user;-----------------------------------------> command to view the data from users in database 
+mysql> 
+
+here use the command ctrl+d two times to exit from the database container
+
+mysql> ^DBye
+root@a00a6c196cee:/# exit
+[root@ip-172-31-90-22 Docker-db]#
+
+
+
+==================================================================================================================================================================
+mysql -u root -p ---------------------------> command to  login into a database
+password:devopspassword (if we open Dockerfile in Docker-db dolder we can see credentials)
+show databases;
+use accounts;
+show tables;
+===================================================================================================================================================================
+
+
+
+NOW WE NEED TO CREATE ANOTHER CONTAINER FOR APPLICATION
+==============================================================
+
+go to Docker-app folder
+
+[root@ip-172-31-90-22 Docker-db]# cd ..
+[root@ip-172-31-90-22 dockerwebapp]# ll
+total 28
+drwxr-xr-x.  3 root root    38 Mar  9 08:00 Docker-app
+drwxr-xr-x.  2 root root    45 Mar  9 08:06 Docker-db
+-rw-r--r--.  1 root root   225 Mar  9 07:36 compose.yml
+drwxr-xr-x.  2 root root    57 Mar  9 07:36 manifests
+-rw-r--r--.  1 root root  7252 Mar  9 07:36 pom.xml
+drwxr-xr-x.  4 root root    30 Mar  9 07:36 src
+drwxr-xr-x. 10 root root 16384 Mar  9 07:38 target
+[root@ip-172-31-90-22 dockerwebapp]# cd Docker-app/
+[root@ip-172-31-90-22 Docker-app]# ll
+total 20
+-rw-r--r--.  1 root root   161 Mar  9 08:00 Dockerfile
+drwxr-xr-x. 10 root root 16384 Mar  9 07:50 target
+[root@ip-172-31-90-22 Docker-app]# 
+
+
+cd Docker-app
+
+now here need create container for previously written the file for Dockerfile
+=================================================================================
+
+
+vim Dockerfile
+
+FROM tomcat:8-jre11
+RUN rm -rf /usr/local/tomcat/webapps/*
+COPY target/vprofile-v2.war /usr/local/tomcat/webapps/ROOT.war ----------->(in here we are doing delete by default path configurations and keeping the default path to our war file by doing this credentials will not gonna ask in TOMCAT)
+EXPOSE 8080
+CMD ["catalina.sh", "run"]
+
+:wq
+
+
+[root@ip-172-31-90-22 Docker-app]# docker run -itd --name appcount -p 1111:8080 appimage ----------------------------> command to create a container
+25d1729a32baf50616bedce21b6b42a8e2ab106adfc92d61fbb837e6ecb67f74
+[root@ip-172-31-90-22 Docker-app]# docker ps --------------------------------> command to view list of containers
+CONTAINER ID   IMAGE      COMMAND                  CREATED          STATUS          PORTS                                                  NAMES
+25d1729a32ba   appimage   "catalina.sh run"        7 seconds ago    Up 6 seconds    0.0.0.0:1111->8080/tcp, :::1111->8080/tcp              appcount
+a00a6c196cee   dbimage    "docker-entrypoint.s…"   15 minutes ago   Up 15 minutes   0.0.0.0:3306->3306/tcp, :::3306->3306/tcp, 33060/tcp   devopsdb
+[root@ip-172-31-90-22 Docker-app]# 
+
+Now try to access an application by using 
+
+http://54.211.12.104:1111/login
+
+we got an error while accessing the application with publicIP:containernumber1111
+
+why this error happens means we created application container,database container as well but application is not linked to database container
+
+now we will do make connetcion application conatiner to database container by giving this below command
+
+while creating a container we need to link the application container, to database container as well but application to  linked to database container by giving 
+command below
+================================================================================================================================================================
+
+docker run -itd --name appcount -p 1111:8080 --link devopsdb:mysqlcon appimage -----------------------> command to create a container and making a connection to 
+database container to the application container (appcount ------> is the application container name, 1111-----> container port number, 8080--------> TOMCAT web app
+applcation default port number, --link devopsdb:mysqlcon ----------> this means --link, devopsdb----> db Image name, mysqlcon------> mysql connection to sqlImage )
+
+Now already we have a container name with appcount thats why we need to remove it first
+
+remove appcont first 
+
+[root@ip-172-31-90-22 Docker-app]# docker ps -------------------------------------------> command to view list of containers
+CONTAINER ID   IMAGE      COMMAND                  CREATED          STATUS          PORTS                                                  NAMES
+25d1729a32ba   appimage   "catalina.sh run"        12 minutes ago   Up 12 minutes   0.0.0.0:1111->8080/tcp, :::1111->8080/tcp              appcount
+a00a6c196cee   dbimage    "docker-entrypoint.s…"   27 minutes ago   Up 27 minutes   0.0.0.0:3306->3306/tcp, :::3306->3306/tcp, 33060/tcp   devopsdb
+[root@ip-172-31-90-22 Docker-app]# docker rm -f appcount ------------------------------------> command to delete the container name with appcount
+appcount
+[root@ip-172-31-90-22 Docker-app]# docker ps -------------------------------------------> command to view list of containers
+CONTAINER ID   IMAGE     COMMAND                  CREATED          STATUS          PORTS                                                  NAMES
+a00a6c196cee   dbimage   "docker-entrypoint.s…"   27 minutes ago   Up 27 minutes   0.0.0.0:3306->3306/tcp, :::3306->3306/tcp, 33060/tcp   devopsdb
+[root@ip-172-31-90-22 Docker-app]# 
+
+Now we need to give connection from appliation container to database container like below
+
+[root@ip-172-31-90-22 Docker-app]# docker run -itd --name appcount -p 1111:8080 --link devopsdb:mysqlcon appimage
+b4e821501a0ff8d470e8461b56d0ae0d3866ce9531c123d604580b7a7598c451
+[root@ip-172-31-90-22 Docker-app]#
+
+now it will work 
+Try accessing the application now
+
+now application has been able to access with publicIP:container number(1111)
+
+http://54.211.12.104:1111/welcome
+
+now the details will be stored in database
+================================================
+
+to cross check the details in database
+=========================================
+
+
+[root@ip-172-31-90-22 Docker-app]# docker exec -it devopsdb bash
+root@a00a6c196cee:/# mysql -u root -p
+Enter password: 
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 5
+Server version: 5.7.25 MySQL Community Server (GPL)
+
+Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> show tables;
+ERROR 1046 (3D000): No database selected
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| accounts           |
+| mysql              |
+| performance_schema |
+| sys                |
++--------------------+
+5 rows in set (0.00 sec)
+
+mysql> show tables;
+ERROR 1046 (3D000): No database selected
+mysql> use accounts;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql> show tables;
++--------------------+
+| Tables_in_accounts |
++--------------------+
+| role               |
+| user               |
+| user_role          |
++--------------------+
+3 rows in set (0.00 sec)
+
+mysql> select * from user\G;
+*************************** 1. row ***************************
+                  id: 7
+            username: admin_vp
+           userEmail: admin@visualpathit.com
+          profileImg: NULL
+      profileImgPath: NULL
+         dateOfBirth: NULL
+          fatherName: NULL
+          motherName: NULL
+              gender: NULL
+       maritalStatus: NULL
+    permanentAddress: NULL
+         tempAddress: NULL
+   primaryOccupation: NULL
+ secondaryOccupation: NULL
+              skills: NULL
+         phoneNumber: NULL
+secondaryPhoneNumber: NULL
+         nationality: NULL
+            language: NULL
+   workingExperience: NULL
+            password: $2a$11$0a7VdTr4rfCQqtsvpng6GuJnzUmQ7gZiHXgzGPgm5hkRa3avXgBLK
+*************************** 2. row ***************************
+                  id: 8
+            username: WahidKhan
+           userEmail: wahid.khan74@gmail.com
+          profileImg: NULL
+      profileImgPath: NULL
+         dateOfBirth: 28/03/1994
+          fatherName: M Khan
+          motherName: R Khan
+              gender: male
+       maritalStatus: unMarried
+    permanentAddress: Ameerpet,Hyderabad
+         tempAddress: Ameerpet,Hyderabad
+   primaryOccupation: Software Engineer
+ secondaryOccupation: Software Engineer
+              skills: Java HTML CSS 
+         phoneNumber: 8888888888
+secondaryPhoneNumber: 8888888888
+         nationality: Indian
+            language: english
+   workingExperience: 2 
+            password: $2a$11$UgG9TkHcgl02LxlqxRHYhOf7Xv4CxFmFEgS0FpUdk42OeslI.6JAW
+*************************** 3. row ***************************
+                  id: 9
+            username: Gayatri
+           userEmail: gayatri@gmail.com
+          profileImg: NULL
+      profileImgPath: NULL
+         dateOfBirth: 20/06/1993
+          fatherName: K
+          motherName: L
+              gender: male
+       maritalStatus: unMarried
+    permanentAddress: Ameerpet,Hyderabad
+         tempAddress: Ameerpet,Hyderabad
+   primaryOccupation: Software Engineer
+ secondaryOccupation: Software Engineer
+              skills: Java HTML CSS 
+         phoneNumber: 9999999999
+secondaryPhoneNumber: 9999999999
+         nationality: India
+            language: english
+   workingExperience: 5
+            password: $2a$11$gwvsvUrFU.YirMM1Yb7NweFudLUM91AzH5BDFnhkNzfzpjG.FplYO
+*************************** 4. row ***************************
+                  id: 10
+            username: WahidKhan2
+           userEmail: wahid.khan741@gmail.com
+          profileImg: NULL
+      profileImgPath: NULL
+         dateOfBirth: 28/03/1994
+          fatherName: M Khan
+          motherName: R Khan
+              gender: male
+       maritalStatus: unMarried
+    permanentAddress: Ameerpet,Hyderabad
+         tempAddress: Ameerpet,Hyderabad
+   primaryOccupation: Software Engineer
+ secondaryOccupation: Software Engineer
+              skills: Java HTML CSS 
+         phoneNumber: 7777777777
+secondaryPhoneNumber: 777777777
+         nationality: India
+            language: english
+   workingExperience: 7
+            password: $2a$11$6oZEgfGGQAH23EaXLVZ2WOSKxcEJFnBSw2N2aghab0s2kcxSQwjhC
+*************************** 5. row ***************************
+                  id: 11
+            username: KiranKumar
+           userEmail: kiran@gmail.com
+          profileImg: NULL
+      profileImgPath: NULL
+         dateOfBirth: 8/12/1993
+          fatherName: K K
+          motherName: RK
+              gender: male
+       maritalStatus: unMarried
+    permanentAddress: California
+         tempAddress: James Street
+   primaryOccupation: Software Engineer
+ secondaryOccupation: Software Engineer
+              skills: Java HTML CSS 
+         phoneNumber: 1010101010
+secondaryPhoneNumber: 1010101010
+         nationality: India
+            language: english
+   workingExperience: 10
+            password: $2a$11$EXwpna1MlFFlKW5ut1iVi.AoeIulkPPmcOHFO8pOoQt1IYU9COU0m
+*************************** 6. row ***************************
+                  id: 12
+            username: Saikumar
+           userEmail: sai@gmail.com
+          profileImg: NULL
+      profileImgPath: NULL
+         dateOfBirth: 20/06/1993
+          fatherName: Sai RK
+          motherName: Sai AK
+              gender: male
+       maritalStatus: unMarried
+    permanentAddress: California
+         tempAddress: US
+   primaryOccupation: Software Engineer
+ secondaryOccupation: Software Engineer
+              skills: Java HTML CSS AWS
+         phoneNumber: 8888888111
+secondaryPhoneNumber: 8888888111
+         nationality: India
+            language: english
+   workingExperience: 8
+            password: $2a$11$pzWNzzR.HUkHzz2zhAgqOeCl0WaTgY33NxxJ7n0l.rnEqjB9JO7vy
+*************************** 7. row ***************************
+                  id: 13
+            username: RamSai
+           userEmail: ram@gmail.com
+          profileImg: NULL
+      profileImgPath: NULL
+         dateOfBirth: NULL
+          fatherName: NULL
+          motherName: NULL
+              gender: NULL
+       maritalStatus: NULL
+    permanentAddress: NULL
+         tempAddress: NULL
+   primaryOccupation: NULL
+ secondaryOccupation: NULL
+              skills: NULL
+         phoneNumber: NULL
+secondaryPhoneNumber: NULL
+         nationality: NULL
+            language: NULL
+   workingExperience: NULL
+            password: $2a$11$6BSmYPrT8I8b9yHmx.uTRu/QxnQM2vhZYQa8mR33aReWA4WFihyGK
+*************************** 8. row ***************************
+                  id: 14
+            username: pranay
+           userEmail: gorantlapranay8@gmail.com
+          profileImg: NULL
+      profileImgPath: NULL
+         dateOfBirth: NULL
+          fatherName: NULL
+          motherName: NULL
+              gender: NULL
+       maritalStatus: NULL
+    permanentAddress: NULL
+         tempAddress: NULL
+   primaryOccupation: NULL
+ secondaryOccupation: NULL
+              skills: NULL
+         phoneNumber: NULL
+secondaryPhoneNumber: NULL
+         nationality: NULL
+            language: NULL
+   workingExperience: NULL
+            password: $2a$11$flaKHD1dgL7BHUh22.U7O.nCJSgZiUDNwgkEbZqd4DeUsMOJdACd2
+8 rows in set (0.00 sec)
+
+ERROR: 
+No query specified
+
+mysql> 
+
+for example if we kept any data in application it will store in user
+if we want to see means command is below
+
+select *from user; --------> to view data in confused order
+select *from user\G;  --------> to view data in table order
+
+if we give ctrl+d 2 times we can do exit from the container
+mysql> 
+mysql> select * from user;-----------------------------------------> command to view the data from users in database 
+mysql> 
+
+here use the command ctrl+d two times to exit from the database container
+
+mysql> ^DBye
+root@a00a6c196cee:/# exit
+[root@ip-172-31-90-22 Docker-db]#
+
+
+
+NOW DOCKERHUB TOPIC
+=======================
+
+first go to dockerhub login
+
+create one repo in dockerhub
+now we need to push the image into this created repo in dockerhub
+
+go to ec2-instance
+
+[root@ip-172-31-90-22 Docker-app]# docker images -----------------------------------> command to view list of images 
+REPOSITORY   TAG       IMAGE ID       CREATED          SIZE
+dbimage      latest    485477282a4b   47 minutes ago   372MB
+appimage     latest    fc8586461e45   52 minutes ago   323MB
+
+format to rename a Image is
+docker tag Imagename(which Image we want to do rename) usernameofDockerHub/RepoNameofDockerHub:giving tagname to the renaming the Image
+
+docker tag Imagename username/reponame:tag name
+
+[root@ip-172-31-90-22 Docker-app]# docker tag appimage pranay419/myrepo:appimage -------------------> command to pull the created repository from DockerHub
+(docker tag -------> means renaming a image, pranay419-------> username of my DockerHub account, myrepo---------> repo name in DockerHub, :appimage-----> giving a
+tag name to the renaming the image)
+[root@ip-172-31-90-22 Docker-app]# docker images
+REPOSITORY         TAG        IMAGE ID       CREATED          SIZE
+dbimage            latest     485477282a4b   48 minutes ago   372MB
+appimage           latest     fc8586461e45   53 minutes ago   323MB
+pranay419/myrepo   appimage   fc8586461e45   53 minutes ago   323MB --------------> this is the rename Image
+[root@ip-172-31-90-22 Docker-app]#
+
+Now we need to push the Image to DockerHub
+
+first need to be login
+
+[root@ip-172-31-90-22 Docker-app]# docker login -------------------------------> command to login into a DockerHub
+Log in with your Docker ID or email address to push and pull images from Docker Hub. If you don't have a Docker ID, head over to https://hub.docker.com/ to create one.
+You can log in with your password or a Personal Access Token (PAT). Using a limited-scope PAT grants better security and is required for organizations using SSO. Learn more at https://docs.docker.com/go/access-tokens/
+
+Username: pranay419 -----------------> username of DockerHub
+Password: ---------------> need to give here DockerHub passwork (Password:Pranay@1409)
+WARNING! Your password will be stored unencrypted in /root/.docker/config.json.
+Configure a credential helper to remove this warning. See
+https://docs.docker.com/engine/reference/commandline/login/#credentials-store
+
+Login Succeeded
+[root@ip-172-31-90-22 Docker-app]# docker push pranay419/myrepo:appimage ------------------------> command to push the Image to DockerHub
+The push refers to repository [docker.io/pranay419/myrepo]
+b48aea64179d: Pushed 
+5f70bf18a086: Pushed 
+8a513acb4745: Mounted from library/tomcat 
+b9353ef204ca: Mounted from library/tomcat 
+cb14ac22c631: Mounted from library/tomcat 
+b9eec3f79502: Mounted from library/tomcat 
+47a781906570: Mounted from library/tomcat 
+b4071ce2f2ea: Mounted from library/tomcat 
+21ea631b02cd: Mounted from library/tomcat 
+90c4c6bb3fef: Mounted from library/tomcat 
+5498e8c22f69: Mounted from library/tomcat 
+appimage: digest: sha256:dc9a75e345a80f0180c2701c5489367462260f138b47c302a09b21eab4cf5af8 size: 2622
+
+Login Succeeded
+
+Now go and check in DockerHub Image is got pushed or not?
+
+Image got pushed successfully
+
+Now need to be push DB Image also
+
+syntax to push the DB Image is
+
+docker tag dbimage pranay419/myrepo:dbimage -------------> syntax to push the DB Image 
+
+[root@ip-172-31-90-22 Docker-app]# docker images ---------------------------> command to view list of Images
+REPOSITORY         TAG        IMAGE ID       CREATED             SIZE
+dbimage            latest     485477282a4b   About an hour ago   372MB
+appimage           latest     fc8586461e45   About an hour ago   323MB
+pranay419/myrepo   appimage   fc8586461e45   About an hour ago   323MB
+[root@ip-172-31-90-22 Docker-app]# docker tag dbimage pranay419/myrepo:dbimage ---------------------------> command to rename a dbimage by using tag
+[root@ip-172-31-90-22 Docker-app]# docker images
+REPOSITORY         TAG        IMAGE ID       CREATED             SIZE
+pranay419/myrepo   dbimage    485477282a4b   About an hour ago   372MB
+dbimage            latest     485477282a4b   About an hour ago   372MB
+appimage           latest     fc8586461e45   About an hour ago   323MB
+pranay419/myrepo   appimage   fc8586461e45   About an hour ago   323MB
+[root@ip-172-31-90-22 Docker-app]# docker push pranay419/myrepo:dbimage ----------------------------> command to push the Image into a DockerHub
+The push refers to repository [docker.io/pranay419/myrepo]
+65e76bd6da59: Pushed 
+82582edf9553: Mounted from library/mysql 
+9209148debed: Mounted from library/mysql 
+364557e875f1: Mounted from library/mysql 
+5075b9328698: Mounted from library/mysql 
+97874ea0e7f9: Mounted from library/mysql 
+458d25c646d8: Mounted from library/mysql 
+ec41e34b35a0: Mounted from library/mysql 
+3437f67a712b: Mounted from library/mysql 
+0aa7d65147ef: Mounted from library/mysql 
+f411d8bde01c: Mounted from library/mysql 
+5dacd731af1b: Mounted from library/mysql 
+dbimage: digest: sha256:b5d3f5c21a6295406a415c5a4323930eb7aba54e8d1b896e89f442b49e7d576d size: 2829
+[root@ip-172-31-90-22 Docker-app]# 
+
+
+For suppose if we want to pull the Image from DockerHub to Ec2-Instance means following command is below
+
+docker pull pranay419/myrepo:dbimage---------------------------> command to pull the Image from DockerHub to Ec2-Instance
+
+
+
+
+
+
+
+
