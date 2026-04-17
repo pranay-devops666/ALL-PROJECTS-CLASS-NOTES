@@ -1,0 +1,574 @@
+Docker Class -18
+
+TOPIC: DOCKER FINAL PROJECT (PROJECT ON MIGRATING THE MONOLITHIC TO MICROSERVICES APPLICATION)
+===============================================================================================
+
+DOCKER FINAL PROJECT
+
+PROJECT ON MIGRATING THE MONOLITHIC TO MICRO SERVICES APPLICATION
+
+
+first launch one instance
+
+launch instance ---------> c7i-flex-large------>keypair---------->jenkinssg--------->18ebs ------->launch instance
+
+connect the ec2-instance
+
+install git
+
+yum install git -y -----------------------------> 
+
+[root@ip-172-31-43-95 ~]# git clone https://github.com/cloudcomputingintelugu/DigitalLibrary_Docker.git
+Cloning into 'DigitalLibrary_Docker'...
+remote: Enumerating objects: 61, done.
+remote: Counting objects: 100% (61/61), done.
+remote: Compressing objects: 100% (53/53), done.
+remote: Total 61 (delta 20), reused 23 (delta 5), pack-reused 0 (from 0)
+Receiving objects: 100% (61/61), 19.81 KiB | 19.81 MiB/s, done.
+Resolving deltas: 100% (20/20), done.
+[root@ip-172-31-43-95 ~]# ll --------------------------------------------->
+total 0
+drwxr-xr-x. 5 root root 99 Dec 29 08:52 DigitalLibrary_Docker
+[root@ip-172-31-43-95 ~]# cd DigitalLibrary_Docker/
+[root@ip-172-31-43-95 DigitalLibrary_Docker]# ll
+total 4
+drwxr-xr-x. 3 root root 81 Dec 29 08:52 LibraryManagement
+drwxr-xr-x. 7 root root 99 Dec 29 08:52 LibraryManagement_MicroServices
+-rw-r--r--. 1 root root  1 Dec 29 08:52 README.md
+[root@ip-172-31-43-95 DigitalLibrary_Docker]# ll
+total 4
+drwxr-xr-x. 3 root root 81 Dec 29 08:52 LibraryManagement
+drwxr-xr-x. 7 root root 99 Dec 29 08:52 LibraryManagement_MicroServices
+-rw-r--r--. 1 root root  1 Dec 29 08:52 README.md
+[root@ip-172-31-43-95 DigitalLibrary_Docker]# cd LibraryManagement
+[root@ip-172-31-43-95 LibraryManagement]# ll
+total 12
+-rw-r--r--. 1 root root 3062 Dec 29 08:52 app.py
+-rw-r--r--. 1 root root  723 Dec 29 08:52 database.sql
+-rw-r--r--. 1 root root   37 Dec 29 08:52 requirements.txt
+drwxr-xr-x. 2 root root   98 Dec 29 08:52 templates
+[root@ip-172-31-43-95 LibraryManagement]# yum install python-pip -y--------->command to install dependencies
+
+
+[root@ip-172-31-43-95 LibraryManagement]# pip install -r requirements.txt------> command to install dependencies
+
+[root@ip-172-31-43-95 LibraryManagement]# python3 app.py---------> command to run the application
+
+now lets create database in cloud
+
+search RDS in aws dashboard-----> select Aurora and RDS------>select Databases---->create Databases--->select Full configuration--------->select MySQL------>
+selectFree tier-------------->DB instance identifier:database-1--------->Master username:digital_library---------> password:Devops2025--------->Burstable classes 
+(includes t classes):db.t3.micro--------->Storage type:20-------->security group:jenkins security group---------->create database
+
+for this created database need to create seperate database server
+
+launch instanec--------->
+
+
+we can see all database details below file 
+
+[root@ip-172-31-43-95 LibraryManagement]# ll
+total 12
+-rw-r--r--. 1 root root 3062 Dec 29 08:52 app.py
+-rw-r--r--. 1 root root  723 Dec 29 08:52 database.sql
+-rw-r--r--. 1 root root   37 Dec 29 08:52 requirements.txt
+drwxr-xr-x. 2 root root   98 Dec 29 08:52 templates
+[root@ip-172-31-43-95 LibraryManagement]# cat database.sql 
+CREATE DATABASE digital_library;
+USE digital_library;
+
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50),
+    email VARCHAR(100) UNIQUE,
+    password VARCHAR(100)
+);
+
+CREATE TABLE books (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(100),
+    author VARCHAR(100)
+);
+
+CREATE TABLE borrow_records (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    book_id INT,
+    borrow_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Sample books
+INSERT INTO books (title, author) VALUES
+("Clean Code", "Robert Martin"),
+("Design Patterns", "Erich Gamma"),
+("Flask Web Development", "Miguel Grinberg");
+
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'root';
+FLUSH PRIVILEGES;[root@ip-172-31-43-95 LibraryManagement]# 
+
+we can see details of username in app.py
+
+vim app.py
+
+
+it will take some time to create database
+
+lets launch anaother ec2-instanec for database
+
+yum install mariadb105 -y-----------> give this command to python instnace to check database will create or not
+
+mysql -u root -h database-1.cwrkcec6g5fe.us-east-1.rds.amazonaws.com -p------------> command to connect database--------->
+database-1.cwrkcec6g5fe.us-east-1.rds.amazonaws.com------(this should be copy from created database in end point)
+
+database has been conected
+
+now we need to create database tables & queries running
+
+need to do that we should take file from github repo
+
+github repo:python-code-library-app/database.sql-----------> in this github repo -------> databse.sql file 
+
+open that file and do copy paste all commands in python instance like this below
+
+MySQL [(none)]> CREATE DATABASE digital_library;
+Query OK, 1 row affected (0.007 sec)
+
+MySQL [(none)]> USE digital_library;
+Database changed
+MySQL [digital_library]> 
+MySQL [digital_library]> CREATE TABLE users (
+    ->     id INT AUTO_INCREMENT PRIMARY KEY,
+    ->     name VARCHAR(50),
+    ->     email VARCHAR(100) UNIQUE,
+    ->     password VARCHAR(100)
+    -> );
+Query OK, 0 rows affected (0.040 sec)
+
+MySQL [digital_library]> 
+MySQL [digital_library]> CREATE TABLE books (
+    ->     id INT AUTO_INCREMENT PRIMARY KEY,
+    ->     title VARCHAR(100),
+    ->     author VARCHAR(100)
+    -> );
+Query OK, 0 rows affected (0.028 sec)
+
+MySQL [digital_library]> 
+MySQL [digital_library]> CREATE TABLE borrow_records (
+    ->     id INT AUTO_INCREMENT PRIMARY KEY,
+    ->     user_id INT,
+    ->     book_id INT,
+    ->     borrow_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    -> );
+Query OK, 0 rows affected (0.030 sec)
+
+MySQL [digital_library]> 
+MySQL [digital_library]> -- Sample books
+MySQL [digital_library]> INSERT INTO books (title, author) VALUES
+    -> ("Docker Book", "Mustafa"),
+    -> ("Kubernetes", "Mustafa Shaik"),
+    -> ("Terraform", "Musta");
+Query OK, 3 rows affected (0.008 sec)
+Records: 3  Duplicates: 0  Warnings: 0
+
+MySQL [digital_library]> 
+MySQL [digital_library]> GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY 'root';
+ERROR 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'IDENTIFIED BY 'root'' at line 1
+MySQL [digital_library]> FLUSH PRIVILEGES;
+Query OK, 0 rows affected (0.008 sec)
+
+MySQL [digital_library]> 
+
+
+now do check database will be create or not by this below command
+
+
+
+MySQL [digital_library]> show tables;
++---------------------------+
+| Tables_in_digital_library |
++---------------------------+
+| books                     |
+| borrow_records            |
+| users                     |
++---------------------------+
+3 rows in set (0.002 sec)
+
+MySQL [digital_library]> select * from books;
++----+-------------+---------------+
+| id | title       | author        |
++----+-------------+---------------+
+|  1 | Docker Book | Mustafa       |
+|  2 | Kubernetes  | Mustafa Shaik |
+|  3 | Terraform   | Musta         |
+|  4 | Docker Book | Mustafa       |
+|  5 | Kubernetes  | Mustafa Shaik |
+|  6 | Terraform   | Musta         |
++----+-------------+---------------+
+6 rows in set (0.001 sec)
+
+MySQL [digital_library]>
+
+lets get back to home
+
+ctrl+d give this command 2 times
+
+cd ------> enter
+
+do change app.py file and give databse end point overthere like below
+
+vim app.py
+
+here do change and give database end point in host place
+
+# app.py
+from flask import Flask, render_template, request, redirect, url_for, session, flash
+import mysql.connector
+
+app = Flask(__name__)
+app.secret_key = "supersecretkey"
+
+# Database connection
+db = mysql.connector.connect(
+    host="database-2.cwrkcec6g5fe.us-east-1.rds.amazonaws.com",
+    user="root",
+    password="Devops2025",
+    database="digital_library"
+)
+
+
+
+now try to run application
+
+python3 app.py
+
+[root@ip-172-31-35-236 LibraryManagement]# python3 app.py
+ * Serving Flask app 'app'
+ * Debug mode: on
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+Press CTRL+C to quit
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 358-057-453
+
+
+this is working on locally only we need to work and run in outside as well
+
+if we need to work and run the application in outside means 
+
+go to app.py file do change in last line 
+
+vim app.py
+
+app.run(host="0.0.0.0", port=5000, debug=True)
+
+:wq
+
+
+[root@ip-172-31-35-236 LibraryManagement]# python3 app.py
+ * Serving Flask app 'app'
+ * Debug mode: on
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://172.31.35.236:5000
+Press CTRL+C to quit
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 358-057-453
+
+
+now it is accessible with port number 5000
+
+http://34.230.48.237:5000/signin
+
+
+it is working
+
+do account create here if we want means
+
+
+delete the created database in aws dashboard
+
+do delete all files and folders in python instance
+
+now we will do impliment microservices 
+
+we need Docker to impliment microservices 
+
+
+yum install docker -y && systemctl start docker
+
+git clone https://github.com/pranay-devops666/python-code-library-app.git
+
+git checkout master
+
+cd database/
+
+vim Dockerfile
+
+FROM mysql/mysql-server:5.7
+ENV MYSQL_ROOT_PASSWORD=root
+ENV MYSQL_USER=root
+EXPOSE 3306
+COPY database.sql /docker-entrypoint-initdb.d/database.sql
+
+:wq
+
+docker build -t dbimage .
+
+cd ..
+
+
+cd auth/
+
+vim Dockerfile
+
+# Base image
+FROM python:3.9-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy service code
+COPY . .
+
+# Default command (will be overridden in docker-compose)
+CMD ["python", "auth_service.py"]
+
+
+:wq
+
+
+docker build authimage .
+
+cd ..
+
+cd books/ 
+
+vim Dockerfile
+
+# Base image
+FROM python:3.9-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy service code
+COPY . .
+
+# Default command (will be overridden in docker-compose)
+CMD ["python", "book_service.py"]
+
+:wq
+
+cd ..
+
+cd borrow/
+
+vim Dockerfile
+
+# Base image
+FROM python:3.9-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy service code
+COPY . .
+
+# Default command (will be overridden in docker-compose)
+CMD ["python", "borrow_service.py"]
+
+:wq
+
+docker build -t borrowimage .
+
+docker build -t frontendimage .
+
+[root@ip-172-31-2-246 python-code-library-app]# docker images
+REPOSITORY      TAG       IMAGE ID       CREATED              SIZE
+frontendimage   latest    1a94c2029455   21 seconds ago       232MB
+borrowimage     latest    399dccdc8412   About a minute ago   232MB
+bookimage       latest    157617b68831   2 minutes ago        232MB
+authimage       latest    e3af36432ddc   4 minutes ago        232MB
+dbimage         latest    9a54af167796   7 minutes ago        432MB
+[root@ip-172-31-2-246 python-code-library-app]# 
+
+
+now we need containers here
+
+we can't create containers directly here why because if we create directly means it will be create by default on bridge network
+
+so we need seperate network for those 
+
+[root@ip-172-31-2-246 python-code-library-app]# docker network create pranay
+bd64f7b4624cd8bfdf7f70acd1e6705847f2b9fb4a91465f9257ab4f6b020acb
+[root@ip-172-31-2-246 python-code-library-app]#
+
+
+now in this name pranay network we need to create containers here
+
+[root@ip-172-31-2-246 python-code-library-app]# docker run -d --name db -p 3306:3306 --network pranay dbimage
+2c46101e96030524a9d84d633f99081e6f298ebf3c594d958b1dd5aebbeeeab9
+[root@ip-172-31-2-246 python-code-library-app]# 
+
+[root@ip-172-31-2-246 python-code-library-app]# docker exec -it db bash
+bash-4.2# mysql -u root -p
+Enter password: 
+ERROR 1045 (28000): Access denied for user 'root'@'localhost' (using password: YES)
+bash-4.2# mysql -u root -p
+Enter password: 
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 5
+Server version: 5.7.41 MySQL Community Server (GPL)
+
+Copyright (c) 2000, 2023, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> show tables;
+ERROR 1046 (3D000): No database selected
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| digital_library    |
+| mysql              |
+| performance_schema |
+| sys                |
++--------------------+
+5 rows in set (0.00 sec)
+
+mysql> 
+
+
+
+ctrl+d for 2 times to exit
+
+[root@ip-172-31-2-246 python-code-library-app]# docker run -d --name auth_service -p 5001:5001 --network pranay authimage
+f89783ffe7ae3cf46529f4b811b44262c4a90dfa6c7e4366f244af8aa06290ca
+[root@ip-172-31-2-246 python-code-library-app]# 
+
+
+[root@ip-172-31-2-246 python-code-library-app]# docker run -d --name book_service -p 5002:5002 --network pranay bookimage
+432c6941b932fb1d11a2161f34b8c34bc3c3af56a8876e5597230a96d5bb969e
+[root@ip-172-31-2-246 python-code-library-app]#
+
+
+[root@ip-172-31-2-246 python-code-library-app]# docker run -d --name borrow_service -p 5003:5003 --network pranay borrowimage
+71054fda7eb0844e770ba169800c30a524c1739655426fd44d9f0b813ba93f11
+[root@ip-172-31-2-246 python-code-library-app]#
+
+
+[root@ip-172-31-2-246 python-code-library-app]# docker run -d --name frontend -p 5000:5000 --network pranay frontendimage
+472b318706741446b38102eddd91a18f81136b667f33deb327b99b47f43eac24
+[root@ip-172-31-2-246 python-code-library-app]#
+
+
+[root@ip-172-31-2-246 python-code-library-app]# docker ps
+CONTAINER ID   IMAGE           COMMAND                  CREATED              STATUS                    PORTS                                                  NAMES
+472b31870674   frontendimage   "python app.py"          13 seconds ago       Up 11 seconds             0.0.0.0:5000->5000/tcp, :::5000->5000/tcp              frontend
+71054fda7eb0   borrowimage     "python borrow_servi…"   About a minute ago   Up About a minute         0.0.0.0:5003->5003/tcp, :::5003->5003/tcp              borrow_service
+432c6941b932   bookimage       "python book_service…"   About a minute ago   Up About a minute         0.0.0.0:5002->5002/tcp, :::5002->5002/tcp              book_service
+f89783ffe7ae   authimage       "python auth_service…"   3 minutes ago        Up 3 minutes              0.0.0.0:5001->5001/tcp, :::5001->5001/tcp              auth_service
+2c46101e9603   dbimage         "/entrypoint.sh mysq…"   11 minutes ago       Up 11 minutes (healthy)   0.0.0.0:3306->3306/tcp, :::3306->3306/tcp, 33060/tcp   db
+[root@ip-172-31-2-246 python-code-library-app]# 
+
+
+
+5 images & 5 containers has been created
+
+now do access the application
+
+http://34.234.175.36:5000/signin
+
+
+before the application had runned on local now the application is running on containers
+
+docker stop $(docker ps -a -q)
+
+docker container prune
+
+for images if we want to keep means if we kept otherwise means we can delete it is optional
+
+now we will do write docker compose file here
+
+vim compose.yml
+
+---
+services:
+  db:
+    container_name: db
+    image: dbimage
+    ports:
+      - "3306:3306"
+
+  auth_service:
+    container_name: auth_service
+    image: authimage
+    ports:
+      - "5001:5001"
+
+  book_service:
+    container_name: book_service
+    image: book_service
+    ports:
+      - "5002:5002"
+
+  borrow_service:
+    container_name: borrow_service
+    image: borrow_service
+    ports:
+      - "5003:5003"
+
+  frontend:
+    container_name: frontend
+    image: frontendimage
+    ports:
+      - "5000:5000"
+
+:wq
+
+install docker compose
+
+sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+# Apply executable permissions
+sudo chmod +x /usr/local/bin/docker-compose
+# Create a symbolic link
+sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+
+# Install using pip (Python package manager)
+sudo yum install -y python3-pip
+sudo pip3 install docker-compose
+
+#check version
+docker-compose --version
+
+
+docker-compose up -d
+
+
+
+
+
+
+
+
