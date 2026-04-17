@@ -1,0 +1,526 @@
+AS AUTOMATION SCRIPT 3-TIER APP DEPLOYMENT USING JENKINS AND DOCKERFILE
+
+
+Docker Class -07
+
+TOPIC: AS AUTOMATION SCRIPT 3-TIER APP DEPLOYMENT USING JENKINS AND DOCKERFILE
+====================================================================================
+
+3-TIER APP DEPLOYMENT USING JENKINS AND DOCKERFILE AS AUTOMATION SCRIPT
+
+CODE(GitHub)-----------> CAQ(SONARQUBE)---------->Build(With Maven)-------------->(we can store it)Artifact(Nexus)-------------> Dockerfile
+(we will Build the Dockerfile)----------> we will create container(By using Docker)
+
+Tools need to be Install
+
+DOCKER, JENKINS, GIT, SONAR, MAVEN, NEXUS
+
+First Launch an EC-Instance----------------> Name:PROJECT-----------> Instance type:mci-flex-large----------> with keypair----------> jenkins security group------->
+---------> 28gb ebs volume---------> launch and connect EC2-Instance
+
+set hostname as 3-Tier-Application like below
+
+[root@3-Tier-Application ~]#
+
+create one file to install all tools at a time
+
+vim tools.sh ------------------------------------------> command to create a file with name tools.sh
+
+sudo yum update –y
+sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+sudo yum upgrade
+sudo yum install java-17-amazon-corretto -y
+sudo yum install jenkins git maven -y
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+sudo systemctl status jenkins
+sudo systemctl start docker
+
+:wq
+
+[root@3-Tier-Application ~]# vim tools.sh ------------------------------------------> command to create a file with name tools.sh
+
+[root@3-Tier-Application ~]# sh tools.sh ---------------------------> command to execute the file
+
+Now Launch an Jenkins Dashboard by using copying the Public IPwith port number 8080 like below
+
+http://35.175.143.186:8080/--------------> Launching the Jenkins Dashboard
+
+Install pipeline stage view plugin to view logs and console output clearly
+
+Go to manage jenkins--------------> select plugins -----------> search as pipeline stage view----------------> install it
+
+Now create a Job
+
+Click on New Item ---------------> create a pipeline Job-----------> Name:Pipeline
+
+pipeline {
+    agent any
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/pranay-devops666/dockerwebapp.git'
+            }
+        }
+    }
+}
+
+save & Build the Job
+
+Build Job got success -----------> code has came
+
+Now we need to do add CAQ stage for sonarQube
+
+Previously we taken an seperate EC2-Instance to install Sonarqube for to add a CAQ Stage in pipeline job
+
+Now we had installed Docker in our Ec2-Instance we can able to get the Sonarqube official Image from DockerHub like below
+
+Go to DockerHub -------------> search Image as sonarqube official Image--------> in here official Image there will be a commands
+
+By using this sonarqube official Image we can to run a sonarqube inside a container
+
+docker run --name sonar -p 9000:9000 sonarqube:lts-community -------------> command to install sonarqube official Image(ommand also taken from DockerHub)
+
+Now see container has been created or not
+
+[root@3-Tier-Application ~]# docker ps -a
+CONTAINER ID   IMAGE                     COMMAND                  CREATED         STATUS              PORTS                                       NAMES
+86264675ceaa   sonarqube:lts-community   "/opt/sonarqube/dock…"   7 minutes ago   Up About a minute   0.0.0.0:9000->9000/tcp, :::9000->9000/tcp   sonar
+[root@3-Tier-Application ~]#
+
+In SonarQube there is a default credentials are there like below
+
+username:admin
+password:admin
+
+Login Successfully in SonarQube Dashboard
+
+In SonarQube Dashboard---------> select Manually--------> Projectname:MyProject-------> setup-----------> with jenkins--------> with GitHub--------> with
+Maven----------> continue--------> commands will come here taking that commands we need to give in job pipline in CAQ stage
+
+before going to add CAQ stage in job pipeline we need to Install Sonarqube plugin in it
+
+Go to manage jenkins--------------> select plugins -----------> search as sonarqube scanner----------------> install it
+
+again Go to manage jenkins and sonarqube configuration like below
+
+Go to manage jenkins---------> select systems ---------> select sonarqube Installations----------> Add sonarqube---------> name:mysonar---------> sonar server: paste
+here sonarqube dashboard URL (http://35.175.143.186:9000/)-------------> add sonarqube credentials -------> add------> kind:secret text-------->here secrect: we
+will get from sonarqube dashboard----------> go to sonarqube dashboard---> my account------> settings------> generate token here ------>name:jenkins token-------->
+
+Go to manage jenkins--------------> select tools ---------> add sonar tool & maven tool
+
+Now we need to Integrate in our job pipeline
+
+Now add Maven tool & CAQ stage in Job pipeline like below
+
+pipeline {
+    agent any
+    tools {
+        maven 'mymaven'
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/pranay-devops666/dockerwebapp.git'
+            }
+        }
+        stage ("CAQ") {
+            steps {
+                withSonarQubeEnv('mysonar') {
+                    sh "mvn clean verify sonar:sonar -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+    }
+}
+
+save & Build the Job
+
+Build Job got success -----------> Sonarqube CAQ Stage has done 
+
+
+
+Now Build stage 
+
+pipeline {
+    agent any
+    tools {
+        maven 'mymaven'
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/pranay-devops666/dockerwebapp.git'
+            }
+        }
+        stage ("CAQ") {
+            steps {
+                withSonarQubeEnv("mysonar") {
+                    sh "mvn clean verify sonar:sonar -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage ("Build") {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+    }
+}
+
+
+save & Build the Job
+
+Build Job got success 
+
+Now Artifacts (nexusArtifactUploader)
+
+Foe this Neus launch one seperate EC2-Instance
+
+Launch Instance--------> name:NEXUS--------> Instance type:c7i-flex-large--------> with key pair-----------> nexus security group---------> 28 ebs volume------>
+launch and connect EC2-Instance
+
+To Launch Nexus Dashboard kindly follow these below steps
+
+Artifact (Nexus)
+==============================
+Once the build is successful, we package the application and upload the artifact to Nexus, 
+a repository manager that acts as a centralized storage for build artifacts.
+
+STEPS TO SETUP AN NEXUS DASHBOARD
+====================================
+
+1. Instance type: 2 cpus & 4 GB RAM & 20 GB EBS
+2. Java install
+3. Nexus download(sonatype nexus)
+4. untar (unzip)
+5. change the owners of those files (nexus)
+6. Nexus user create
+7. login as user and nexus start
+
+yum install java-17-amazon-corretto -y--------------> command to install java-17th version
+
+now create on folder
+
+mkdir /app----> enter
+
+
+https://help.sonatype.com/en/install-nexus-repository.html
+
+https://help.sonatype.com/en/download.html
+
+wget https://download.sonatype.com/nexus/3/nexus-3.89.1-02-linux-x86_64.tar.gz----------> command to download nexus 
+
+[root@NEXUS ~]# tar -zxvf nexus-3.89.1-02-linux-x86_64.tar.gz--------> command to unzip the file
+
+total 454244
+-rw-r--r--. 1 root root 465144623 Feb 11 12:16 nexus-3.89.1-02-linux-x86_64.tar.gz
+[root@NEXUS app]#
+
+[root@NEXUS app]# ll
+total 454244
+drwxr-xr-x. 6 root root        94 Feb 26 06:33 nexus-3.89.1-02
+-rw-r--r--. 1 root root 465144623 Feb 11 12:16 nexus-3.89.1-02-linux-x86_64.tar.gz
+drwxr-xr-x. 3 root root        20 Feb 10 18:29 sonatype-work
+[root@NEXUS app]#
+
+cd nexus-3.89.1-02 -------> command to go to that folder
+
+[root@NEXUS nexus-3.89.1-02]# cd bin/
+[root@NEXUS bin]# ll
+total 275996
+-rwxr-xr-x. 1 root root      6735 Feb 10 17:53 nexus
+-rw-r--r--. 1 root root      1325 Feb 10 17:53 nexus.vmoptions
+-rw-r--r--. 1 root root 282604548 Feb 10 18:28 sonatype-nexus-repository-3.89.1-02.jar
+[root@NEXUS bin]# ./nexus start
+WARNING: ************************************************************
+WARNING: Detected execution as "root" user.  This is NOT recommended!
+WARNING: ************************************************************
+Starting nexus
+[root@NEXUS bin]#
+
+[root@NEXUS bin]# useradd nexus
+[root@NEXUS bin]# su - nexus
+[nexus@NEXUS ~]$
+[nexus@NEXUS app]$ ll
+total 454244
+drwxr-xr-x. 6 root root        94 Feb 26 06:33 nexus-3.89.1-02
+-rw-r--r--. 1 root root 465144623 Feb 11 12:16 nexus-3.89.1-02-linux-x86_64.tar.gz
+drwxr-xr-x. 3 root root        20 Feb 10 18:29 sonatype-work
+[nexus@NEXUS app]$ cd nexus-3.89.1-02/
+[nexus@NEXUS bin]$ ll
+total 275996
+-rwxr-xr-x. 1 root root      6735 Feb 10 17:53 nexus
+-rw-r--r--. 1 root root      1325 Feb 10 17:53 nexus.vmoptions
+-rw-r--r--. 1 root root 282604548 Feb 10 18:28 sonatype-nexus-repository-3.89.1-02.jar
+[nexus@NEXUS bin]$ ./nexus start
+Starting nexus
+./nexus: line 175: /app/sonatype-work/nexus3/nexus.pid: Permission denied
+[nexus@NEXUS bin]$
+
+Nexus has been started but got an error as ./nexus: line 175: /app/sonatype-work/nexus3/nexus.pid: Permission denied
+
+permission denied on line no.175
+
+solution is change the owners for it run as neus user
+
+[root@NEXUS bin]# ll
+total 275996
+-rwxr-xr-x. 1 root root      6735 Feb 10 17:53 nexus
+-rw-r--r--. 1 root root      1325 Feb 10 17:53 nexus.vmoptions
+-rw-r--r--. 1 root root 282604548 Feb 10 18:28 sonatype-nexus-repository-3.89.1-02.jar
+[root@NEXUS bin]# chown nexus:nexus nexus
+[root@NEXUS bin]# 
+[root@NEXUS bin]# su - nexus
+Last login: Thu Feb 26 06:36:45 UTC 2026 on pts/1
+[nexus@NEXUS ~]$
+[nexus@NEXUS ~]$ cd /app/nexus-3.89.1-02/bin/
+[nexus@NEXUS ~]$ cd /app/
+[nexus@NEXUS app]$ ll
+total 454244
+drwxr-xr-x. 6 nexus nexus        94 Feb 26 06:33 nexus-3.89.1-02
+-rw-r--r--. 1 root  root  465144623 Feb 11 12:16 nexus-3.89.1-02-linux-x86_64.tar.gz
+drwxr-xr-x. 3 nexus nexus        20 Feb 10 18:29 sonatype-work
+[nexus@NEXUS app]$ cd nexus-3.89.1-02/bin/
+[nexus@NEXUS bin]$ ll
+total 275996
+-rwxr-xr-x. 1 nexus nexus      6735 Feb 10 17:53 nexus
+-rw-r--r--. 1 nexus nexus      1325 Feb 10 17:53 nexus.vmoptions
+-rw-r--r--. 1 nexus nexus 282604548 Feb 10 18:28 sonatype-nexus-repository-3.89.1-02.jar
+[nexus@NEXUS bin]$ ./nexus start
+Starting nexus
+[nexus@NEXUS bin]$
+
+Sonatype Nexus Repository Dashboard has been Launched
+
+why we are using the NEXUS is to store the Artifacts by creating a repository and we stored in it
+
+Go to Sonatype Nexus Repository Dashboard------> select settings --------> select repository-----> create new repo------> select maven2(hosted) option----->
+name:repo name------>in deployment policy: allow redploy(means we can store our war file multiple times)------> create repository
+
+repo has been created
+
+now developers will update this created information in pom.xml like information related to created repo of name, url like below
+
+go to github code --------->open pom.xml file------> open it in here we need to update Artifact_URL in line number 36 & save commit
+
+now we need to store the war file in Sonatype Nexus Repository Dashboard of created repo
+
+to do like that we need to integrate to jenkins with the help of jenkins plugin
+
+Go to Jenkins Dashboard--------> go to manage jenkins---------> selct plugins, available plugins-------> search as nexusartifact uploder plugin-------> install it
+
+do configure created job---------> select build steps-----> nexus artifact uploder---------> fill all details here nexus version as official document, protocal:HTTP
+------>url:copy and paste here nexus dashbord url like only public IP & port number 8081----------> add nexus credentials-------> GroupId:it will be in pom.xml at
+line number:4--------> version it will be in pom.xml at line no:7--------> give repo name:My-Repo------> add Artifacts:ArtifactId:it will be in pom.xml at line no:5
+as myweb----------> type:war-------> File path: target/myweb-8.7.1.war(it will be seen in target folder) ---------> save & build now
+
+Build was successful
+
+
+
+pipeline {
+    agent any
+    tools {
+        maven 'mymaven'
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/pranay-devops666/dockerwebapp.git'
+            }
+        }
+        stage ("CAQ") {
+            steps {
+                withSonarQubeEnv("mysonar") {
+                    sh "mvn clean verify sonar:sonar -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage ("Build") {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        stage ("Artifact") {
+            steps {
+                nexusArtifactUploader artifacts: [[artifactId: 'vprofile', classifier: '', file: 'target/vprofile-v2.war', type: 'war']], credentialsId: 'Ne', groupId: 'com.visualpathit', nexusUrl: '13.219.99.23:8081/', nexusVersion: 'nexus3', protocol: 'http', repository: 'MyNexusRepo', version: 'v2'
+            }
+        }
+    }
+}
+
+Build was successful
+
+Now Dockerfile (we will Build the Dockerfile)
+================================================
+
+Befor doing Dockerfile Build Images 
+
+Need to copy the target folder from dockerwebapp folder to Docker-app folder by adding command the below line of mvn clean package
+
+pipeline {
+    agent any
+    tools {
+        maven 'mymaven'
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/pranay-devops666/dockerwebapp.git'
+            }
+        }
+        stage ("CAQ") {
+            steps {
+                withSonarQubeEnv("mysonar") {
+                    sh "mvn clean verify sonar:sonar -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage ("Build") {
+            steps {
+                sh 'mvn clean package'
+                sh 'cp -r target Docker-app'
+            }
+        }
+        stage ("Artifact") {
+            steps {
+                nexusArtifactUploader artifacts: [[artifactId: 'vprofile', classifier: '', file: 'target/vprofile-v2.war', type: 'war']], credentialsId: 'Ne', groupId: 'com.visualpathit', nexusUrl: '13.219.99.23:8081/', nexusVersion: 'nexus3', protocol: 'http', repository: 'MyNexusRepo', version: 'v2'
+            }
+        }
+    }
+}
+
+
+save and Build Now
+
+target folder has copied to Docker-app successfully
+
+Now Dockerfile (we will Build the Dockerfile)
+================================================
+
+pipeline {
+    agent any
+    tools {
+        maven 'mymaven'
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git "https://github.com/pranay-devops666/dockerwebapp.git"
+            }
+        }
+        stage ("CAQ") {
+            steps {
+                withSonarQubeEnv("mysonar") {
+                    sh "mvn clean verify sonar:sonar -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage ("Build") {
+            steps {
+                sh 'mvn clean package'
+                sh 'cp -r target Docker-app'
+            }
+        }
+        stage ("Artifact") {
+            steps {
+                nexusArtifactUploader artifacts: [[artifactId: 'vprofile', classifier: '', file: 'target/vprofile-v2.war', type: 'war']], credentialsId: 'nexuspassword', groupId: 'com.visualpathit', nexusUrl: '54.197.149.86:8081/', nexusVersion: 'nexus3', protocol: 'http', repository: 'myrepo', version: 'v2'
+            }
+        }
+        stage ("Dockerfile") {
+            steps {
+                sh 'docker build -t appimage1 Docker-app'
+                sh 'docker build -t dbimage1 Docker-db'
+            }
+        }
+        stage ("Deploy") {
+            steps {
+                sh 'docker run -d --name devopsdb -p 3306:3306 dbimage'
+                sh 'docker run -itd --name appcont1 -p 1237:8080 --link devopsdb:mysqlcon appimage1'
+            }
+        }
+    }
+
+
+Before going to Build this above Job Pipeline we need to change permissions like below
+
+[root@3-Tier-Application ~]# chmod 777 /var/run/docker.sock---------------------> command to chnage permissions for the path /var/run/docker.sock
+
+Now Save and build the Job Pipeline
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pipeline {
+    agent any
+    tools {
+        maven 'mymaven'
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git "https://github.com/pranay-devops666/dockerwebapp.git"
+            }
+        }
+        stage ("CAQ") {
+            steps {
+                withSonarQubeEnv("mysonar") {
+                    sh "mvn clean verify sonar:sonar -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage ("Build") {
+            steps {
+                sh 'mvn clean package'
+                sh 'cp -r target Docker-app'
+            }
+        }
+        stage ("Artifact") {
+            steps {
+                nexusArtifactUploader artifacts: [[artifactId: 'vprofile', classifier: '', file: 'target/vprofile-v2.war', type: 'war']], credentialsId: 'nexuspassword', groupId: 'com.visualpathit', nexusUrl: '54.197.149.86:8081/', nexusVersion: 'nexus3', protocol: 'http', repository: 'myrepo', version: 'v2'
+            }
+        }
+        stage ("Dockerfile") {
+            steps {
+                sh 'docker build -t appimage1 Docker-app'
+                sh 'docker build -t dbimage1 Docker-db'
+            }
+        }
+        stage ("Deploy") {
+            steps {
+                sh 'docker run -d --name devopsdb -p 3306:3306 dbimage'
+                sh 'docker run -itd --name appcont1 -p 1237:8080 --link devopsdb:mysqlcon appimage1'
+            }
+        }
+    }
+    post {
+        success {
+            script {
+                mail to: 'gorantlapranay8@gmail.com',
+                    subject: "SUCCESS: Jenkins Job ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    body: "Build SUCCESSFUL"
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
