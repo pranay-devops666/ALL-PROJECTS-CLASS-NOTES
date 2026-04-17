@@ -1,0 +1,1076 @@
+Kubernetes Class Notes, Commands & Hashnode Links
+
+
+Todays class notes : https://mustafa-k8s.hashnode.dev/well-explained-kubernetes-architecture
+Todays class notes-1 : https://mustafa-k8s.hashnode.dev/essential-kubernetes-pod-concepts-for-beginners-to-master
+Todays class notes-2 : https://mustafa-k8s.hashnode.dev/labels-selectors-and-node-selectors
+Todays class notes-1 : https://mustafa-k8s.hashnode.dev/essential-kubernetes-pod-concepts-for-beginners-to-master
+Todays class notes-2 : https://mustafa-k8s.hashnode.dev/labels-selectors-and-node-selectors
+Todays class notes-1 : https://mustafa-k8s.hashnode.dev/replication-controller-vs-replica-set
+Todays class notes-2 : https://mustafa-k8s.hashnode.dev/practical-differences-between-replication-controller-and-replicaset
+Todays class notes-1 : https://mustafa-k8s.hashnode.dev/mastering-kubernetes-deployments-a-step-by-step-guide-for-beginners-to-advance-level
+Todays class notes-2 : https://mustafa-k8s.hashnode.dev/scaling-in-kubernetes-a-deep-dive-into-hpa-and-vpa
+Todays class notes : https://mustafa-k8s.hashnode.dev/deploy-once-run-everywhere-exploring-daemonsets-in-k8s
+Todays class notes :  https://mustafa-k8s.hashnode.dev/configmaps-vs-secrets-the-silent-heroes-of-kubernetes-configurations
+Todays class notes :  https://mustafa-k8s.hashnode.dev/understanding-rbac-a-pillar-of-kubernetes-security
+Todays link : https://mustafa-k8s.hashnode.dev/the-ultimate-guide-to-kubernetes-volumes-types-use-cases-and-best-practices
+
+
+link-1: https://mustafa-k8s.hashnode.dev/mastering-helm-simplify-kubernetes-deployments-with-ease
+link-2 : https://mustafa-k8s.hashnode.dev/host-your-first-helm-chart
+
+
+Todays Commands:
+
+
+1  yum install docker -y && systemctl start docker
+
+    2  curl -LO https://github.com/kubernetes/minikube/releases/latest/download/minikube-linux-amd64
+
+    3  sudo install minikube-linux-amd64 /usr/local/bin/minikube && rm minikube-linux-amd64
+
+    4  minikube version
+
+    5     curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+    6  ll
+
+    7  chmod +x kubectl
+
+    8  ll
+
+    9  mv kubectl /usr/local/bin/
+
+   10  kubectl version
+
+   11  kubectl api-resources
+
+   12  kubectl api-resource
+
+   13  kubectl api-resources
+
+   14  kubectl version
+
+   15  curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+   16  chmod +x kubectl
+
+   17  mv kubectl /usr/local/bin/
+
+   18  kubectl version
+
+   19  kubectl api-resources
+
+   20  minikube status
+
+   21  minikube start --driver=docker
+
+   22  minikube start --driver=docker --force
+
+   23  minikube status
+
+   24  kubectl api-resources
+
+   25  kubectl get pods
+
+   26  kubectl run mypod --image=nginx
+
+   27  kubectl run newpod --image=httpd
+
+   28  kubectl get pods
+
+   29  kubectl get pod
+
+   30  kubectl get po
+
+   31  kubectl get p
+
+   32  kubectl get po
+
+   33  kubectl get  newpod  po
+
+   34  kubectl get po newpod
+
+   35  kubectl delete pod newpod
+
+   36  kubectl get po
+
+   37  vim flm.yml
+
+   38  kubectl api-resources
+
+   39  vim f
+
+   40  vim flm.yml
+
+   41  kubectl create -f flm.yml
+
+   42  kubectl get po
+
+   43  kubectl describe po flm-pod
+
+   44  history
+
+
+Todays commands:
+
+
+1  yum install docker -y && systemctl start docker
+
+    2  curl -LO https://github.com/kubernetes/minikube/releases/latest/download/minikube-linux-amd64
+
+    3  sudo install minikube-linux-amd64 /usr/local/bin/minikube && rm minikube-linux-amd64
+
+    4     curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+    5  chmod +x kubectl
+
+    6  mv kubectl /usr/local/bin/
+
+    7  minikube start --driver=docker --force
+
+    8  minikube status
+
+    9  docker ps
+
+   10  kubectl run pod-1 --image=nginx
+
+   11  kubectl get po
+
+   12  kubectl get pods
+
+   13  vim pod.yml
+
+   14  kubectl create -f pod.yml
+
+   15  kubectl get po
+
+   16  kubectl get po mypod
+
+   17  kubectl get po
+
+   18  kubectl describe pod mypod
+
+   19  kubectl get po -o wide
+
+   20  kubectl get po -o yaml
+
+   21  kubectl get po -o json
+
+   22  vim pod.yml
+
+   23  kubectl create -f pod.yml
+
+   24  kubectl get po
+
+   25  kubectl get po --show-labels
+
+   26  kubectl get po
+
+   27  vim pod.yml
+
+   28  kubectl get po --show-labels
+
+   29  kubectl label pod pod-1 "client=wipro"
+
+   30  kubectl get po --show-labels
+
+   31  kubectl label pod mypod "client=tcs,env=test"
+
+   32  kubectl label pod mypod "client=tcs env=test"
+
+   33  kubectl label pod mypod "client=tcs" "env=test"
+
+   34  kubectl get po --show-labels
+
+   35  kubectl get po -l client=tcs
+
+   36  kubectl get po -l client=wipro,env=test
+
+   37  kubectl get po -l client=wipro env=test
+
+   38   kubectl get po -l "client=wipro" "env=test"
+
+   39  kubectl get po
+
+   40  kubectl get po --show-labels
+
+   41* kubectl label pod pod-1
+
+   42  kubectl get po --show-labels
+
+   43  kubectl get po -l client!=tcs
+
+   44  kubectl get po --show-labels
+
+   45  kubectl delete pod -l client=tcs
+
+   46  vi pod.yml
+
+   47  kubectl create -f pod.yml
+
+   48  kubectl get po --show-labels
+
+   49  vim pod.yml
+
+   50  kubectl create -f pod.yml
+
+   51  kubectl get po --show-labels
+
+   52  kubectl get po -l env=dev,test
+
+   53  kubectl get po -l env=dev test
+
+   54  kubectl get po -l env=dev, env= test
+
+   55  kubectl get po -l env=dev, env=test
+
+   56  history
+
+   57  kubectl get po -l 'env in (dev, test)'
+
+   58  kubectl get po --show-labels
+
+   59  kubectl get po -l 'env in (dev)'
+
+   60  kubectl get po -l 'env ! in (dev)'
+
+   61  kubectl get po -l 'env not in (dev)'
+
+   62  kubectl get po -l 'env notin (dev)'
+
+   63  kubectl get po --show-labels
+
+   64  kubectl get nodes
+
+   65  kubectl get nodes --show-labels
+
+   66  kubectl label node minikube "year=2026"
+
+   67  kubectl get nodes --show-labels
+
+   68  vim pod.yml
+
+   69  kubectl create -f pod.yml
+
+   70  vim pod.yml
+
+   71  kubectl create -f pod.yml
+
+   72  kubectl get po -o wide
+
+   73  history
+
+
+Kops Cluster Creation commands:
+
+
+
+
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+
+unzip awscliv2.zip
+
+sudo ./aws/install
+
+
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+chmod +x kubectl
+
+mv kubectl /usr/local/bin/
+
+curl -Lo kops https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64
+
+chmod +x kops
+
+sudo mv kops /usr/local/bin/kops
+
+
+aws s3 ls
+
+
+aws s3 mb s3://<bucket-name>
+
+export KOPS_STATE_STORE=s3://<bucket-name>
+
+ kops create cluster --name mustafa.k8s.local --zones us-east-2a,us-east-2b --master-size c7i-flex.large --master-volume-size 30 --node-count 2 --node-volume-size 20 --node-size t3.micro --image=<ubuntu-ami-id>
+
+kops update cluster --name mustafa.k8s.local --yes --admin
+
+kubectl get nodes
+
+Todays commands:
+
+
+1     curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+    2  chmod +x kubectl
+
+    3  mv kubectl /usr/local/bin/
+
+    4  curl -Lo kops https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64
+
+    5  chmod +x kops
+
+    6  sudo mv kops /usr/local/bin/kops
+
+    7  aws s3 ls
+
+    8  export KOPS_STATE_STORE=s3://mustafa.2026.flm
+
+    9  kops create cluster --name mustafa.k8s.local --zones us-east-2a,us-east-2b --master-size c7i-flex.large --master-volume-size 30 --node-count 2 --node-volume-size 20 --node-size t3.micro --image=ami-0f5fcdfbd140e4ab7
+
+   10   kops update cluster --name mustafa.k8s.local --yes --admin
+
+   11  kubectl get nodes
+
+   12  ll
+
+   13  vim pod.yml
+
+   14  kubectl create -f pod.yml
+
+   15  kubectl get po
+
+   16  vim service.yml
+
+   17  kubectl api-resources
+
+   18  kubectl api-resources | grep -i "services"
+
+   19  vim service.yml
+
+   20  kubectl create -f service.yml
+
+   21  vim service.yml
+
+   22  kubectl create -f service.yml
+
+   23  kubectl get services
+
+   24  kubectl get svc
+
+   25  vim service.yml
+
+   26  kubectl create -f service.yml
+
+   27  kubectl get svc
+
+   28  vim service.yml
+
+   29  kubectl create -f service.yml
+
+   30  kubectl get svc
+
+   31  ll
+
+   32  vim service.yml
+
+   33  kubectl create -f service.yml
+
+   34  kubectl get svc
+
+   35  kubectl get po
+
+   36  kubectl delete pod pod-1
+
+   37  kubectl create -f pod.yml
+
+   38  history
+
+
+Todays commands:
+
+
+1     curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+    2  chmod +x kubectl
+
+    3  mv kubectl /usr/local/bin/
+
+    4  curl -Lo kops https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64
+
+    5  chmod +x kops
+
+    6  sudo mv kops /usr/local/bin/kops
+
+    7  aws s3 ls
+
+    8  export KOPS_STATE_STORE=s3://mustafa.2026.flm
+
+    9  kops create cluster --name mustafa.k8s.local --zones us-east-2a,us-east-2b --master-count 1 --master-size c7i-flex.large --master-volume-size 30 --node-count 2 --node-size t3.micro --node-volume-size 20 --image=ami-0f5fcdfbd140e4ab7
+
+   10  kops update cluster --name mustafa.k8s.local --yes --admin
+
+   11  curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-4
+
+   12  chmod 700 get_helm.sh
+
+   13  ./get_helm.sh
+
+   14  helm version
+
+   15  helm repo add cicd https://charts.jenkins.io
+
+   16  helm repo ls
+
+   17  helm repo add grafana https://grafana.github.io/helm-charts
+
+   18  helm repo ls
+
+   19  helm repo update
+
+   20  helm repo delete cicd
+
+   21  helm repo rm cicd
+
+   22  helm repo ls
+
+   23  helm repo rm grafana
+
+   24  ll
+
+   25  helm create flm
+
+   26  ll
+
+   27  cd flm/
+
+   28  ll
+
+   29  cat Chart.yaml
+
+   30  ll
+
+   31  vi Chart.yaml
+
+   32  ll templates/
+
+   33  cd templates/
+
+   34  ll
+
+   35  vim deployment.yaml
+
+   36  cd ..
+
+   37  ll
+
+   38  vim values.yaml
+
+   39  vim templates/deployment.yaml
+
+   40  vim values.yaml
+
+   41  vim Chart.yaml
+
+   42  vim values.yaml
+
+   43  ll
+
+   44* helm install release-1 .
+
+   45  kubectl get deploy
+
+   46  kubectl get rs
+
+   47  kubectl get po
+
+   48  kubectl get svc
+
+   49  helm ls
+
+   50  helm uninstall release-1
+
+   51  kubectl get po
+
+   52  kubectl get svc
+
+   53  kubectl get po
+
+   54  kubectl get rs
+
+   55  kubectl get po
+
+   56  kubectl get deploy
+
+   57  kubectl get svc
+
+   58  vim values.yaml
+
+   59  ll
+
+   60  cd
+
+   61  ll
+
+   62  rm -rf flm/
+
+   63  ll
+
+   64  helm create mustafa
+
+   65  ll
+
+   66  cd mustafa/
+
+   67  ll
+
+   68  cd templates/
+
+   69  ll
+
+   70  rm -rf *
+
+   71  ll
+
+   72  vim deployment.yml
+
+   73  vim service.yml
+
+   74  cd ..
+
+   75  ll
+
+   76  helm install devops1 .
+
+   77  kubectl get deploy
+
+   78  kubectl get rs
+
+   79  kubectl get po
+
+   80  kubectl get svc
+
+   81  helm ls
+
+   82  kubectl get svc --show-labels
+
+   83  ll
+
+   84  vim templates/
+
+   85  vim templates/deployment.yml
+
+   86  helm upgrade devops1 .
+
+   87  helm ls
+
+   88  kubectl get po
+
+   89  vim templates/deployment.yml
+
+   90  helm upgrade devops1 .
+
+   91  helm history devops1
+
+   92  helm rollback devops1 1
+
+   93  helm history devops1
+
+   94  kubectl get po
+
+   95  helm ls
+
+   96  helm uninstall devops1
+
+   97  helm ls
+
+   98  ll
+
+   99  cd
+
+  100  ll
+
+  101  helm create devops
+
+  102  cd devops/
+
+  103  ll
+
+  104  cd templates/
+
+  105  ll
+
+  106  rm -rf *
+
+  107  vim deployment.yml
+
+  108  vi service.yml
+
+  109  vim configmap.yml
+
+  110  vim statefulset.yml
+
+  111  vim configmap.yml
+
+  112  ll
+
+  113  cd ..
+
+  114  ll
+
+  115  cd ..
+
+  116  ll
+
+  117  rm -rf mustafa/ get_helm.sh
+
+  118  ll
+
+  119  helm lint devops/
+
+  120  helm package devops/
+
+  121  ll
+
+  122  helm package devops .
+
+  123  ll
+
+  124  helm repo index devops
+
+  125  ll
+
+  126  cd devops/
+
+  127  ll
+
+  128  vim index.yaml
+
+  129  yum install git -y
+
+  130  ll
+
+  131  history
+
+  132  ll
+
+  133  helm package devops
+
+  134  cd ..
+
+  135  ll
+
+  136  helm repo index devops
+
+  137  ll
+
+  138  cd devops/
+
+  139  ll
+
+  140  cd ..
+
+  141  ll
+
+  142  git clone https://github.com/devops0014/formyhelm.git
+
+  143  ll
+
+  144  mv devops-0.1.0.tgz devops/index.yaml formyhelm/
+
+  145  cd formyhelm/
+
+  146  ll
+
+  147  git add *
+
+  148  git commit -m "all files are ready" .
+
+  149  git push origin main
+
+  150  ll
+
+  151  vim index.yaml
+
+  152  cd
+
+  153  ll
+
+  154  rm -rf *
+
+  155  ll
+
+  156  helm ls
+
+  157  helm repo add myrepo https://devops0014.github.io/formyhelm/
+
+  158  helm repo ls
+
+  159  helm repo install myrepo devops
+
+  160  help repo install devops/myrepo
+
+  161* man -k devops/myr
+
+  162  info devops/myrepo
+
+  163  helm install myrepo/devops
+
+  164  helm install myrepo/devops --generate-name
+
+  165  helm install devops/myrepo --generate-name
+
+  166  helm repo ls
+
+  167  helm install release1 myrepo/devops
+
+  168  helm install release1 myrepo
+
+  169  helm install release1 myrepo/.
+
+  170  helm install release1 myrepo/formyhelm
+
+  171  helm install release1 myrepo/devops
+
+  172*
+
+  173  helm install devops myrepo/devops
+
+  174  helm install release1 formyrepo/myrepo
+
+  175  helm install release1 myrepo/formyhelm
+
+  176  helm install release1 formyhelm/myrepo
+
+  177  helm install release1 myrepo
+
+  178  helm install release1 myrepo/2026-01-20T15:54:36.441743046Z
+
+  179  rm -rf *
+
+  180  ll
+
+  181  helm create flm
+
+  182  ll
+
+  183  cd flm/
+
+  184  ll
+
+  185  cd templates/
+
+  186  ll
+
+  187  rm -rf *
+
+  188  ll
+
+  189  vim deploy.yml
+
+  190  vim svc.yml
+
+  191  vim cm.yml
+
+  192  vim svc.yml
+
+  193  vim deploy.yml
+
+  194  vim statefulset.yml
+
+  195  ll
+
+  196  cd
+
+  197  ll
+
+  198  helm lint flm/
+
+  199  ll
+
+  200  helm package flm
+
+  201  ll
+
+  202  helm repo index .
+
+  203  ll
+
+  204  cat index.yaml
+
+  205  ll
+
+  206  vim index.yaml
+
+  207  git clone https://github.com/devops0014/newhelm11.git
+
+  208  cd newhelm11/
+
+  209  l
+
+  210  cd ..
+
+  211  ll
+
+  212  mv flm-0.1.0.tgz index.yaml newhelm11/
+
+  213  cd newhelm11/
+
+  214  ll
+
+  215  git add *
+
+  216  git commit -m "all files are ready" .
+
+  217  git push origin main
+
+  218  cd
+
+  219  helm repo add flm https://devops0014.github.io/newhelm11/
+
+  220  helm repo ls
+
+  221  helm repo update
+
+  222  helm repo ls
+
+  223  helm install release1 flm/flm
+
+  224  kubectl get deploy
+
+  225  kubectl get svc
+
+  226  kubectl get po
+
+  227  kubectl get cm
+
+  228  kubectl get statefulset
+
+  229  kubectl get svc
+
+  230  ll
+
+  231  cd newhelm11/t
+
+  232  ll
+
+  233  vim flm/templates/deploy.yml
+
+  234  vim flm/templates/s
+
+  235  vim flm/templates/statefulset.yml
+
+  236  vim flm/templates/deploy.yml
+
+  237  vim flm/templates/svc.yml
+
+  238  kops get cluster
+
+  239  kops delete cluster --name mustafa.k8s.local --yes
+
+  240  history
+
+
+
+
+Todays commands:
+
+
+1  curl -Lo kops https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64
+
+    2  chmod +x kops
+
+    3  sudo mv kops /usr/local/bin/kops
+
+    4     curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+
+    5  chmod +x kubectl
+
+    6  mv kubectl /usr/local/bin/
+
+    7  aws s3 ls
+
+    8  export KOPS_STATE_STORE=s3://mustafadevops.77
+
+    9  kops create cluster --name mustafa.k8s.local --zones us-east-2a,us-east-2b --master-count 1 --master-size c7i-flex.large --master-volume-size 30 --node-count 2 --node-size t3.micro --node-volume-size 20 --image=ami-0f5fcdfbd140e4ab7
+
+   10   kops update cluster --name mustafa.k8s.local --yes --admin
+
+   11  kubectl get no
+
+   12  ll
+
+   13  kubectl get no
+
+   14  vim deployment.yml
+
+   15  kubectl api-resources
+
+   16  kubectl api-resources | grep -i "deployment"
+
+   17  vim deployment.yml
+
+   18  kubectl create -f deployment.yml
+
+   19  vim deployment.yml
+
+   20  kubectl create -f deployment.yml
+
+   21  vim deployment.yml
+
+   22  kubectl create -f deployment.yml
+
+   23  kubectl get deployment
+
+   24  kubectl get deploy
+
+   25  kubectl get rs
+
+   26  kubectl get pods
+
+   27  kubectl get pod
+
+   28  kubectl get po
+
+   29  kubectl get p
+
+   30  ll
+
+   31  vim service.yml
+
+   32  kubectl create -f service.yml
+
+   33  kubectl get svc
+
+   34  kubectl get po
+
+   35  kubectl delete pod scaler-76fb868947-f4t4z
+
+   36  kubectl get po
+
+   37  kubectl delete pod --all
+
+   38  kubectl get po
+
+   39  kubectl get po --show-labels
+
+   40  vim service.yml
+
+   41  vim deployment.yml
+
+   42  kubectl apply -f deployment.yml
+
+   43  vim deployment.yml
+
+   44  kubectl apply -f deployment.yml
+
+   45  kubectl get rs
+
+   46  kubectl rollout undo deploy scaler --to-revision=1
+
+   47  vim deployment.yml
+
+   48  kubectl get po
+
+   49  kubectl apply -f deployment.yml
+
+   50  kubectl get po
+
+   51  vim deployment.yml
+
+   52  kubectl get po
+
+   53  kubectl apply -f deployment.yml
+
+   54  kubectl get po
+
+   55  kubectl get deploy
+
+   56  kops delete cluter --name mustafa.k8s.local --yes
+
+   57  kops get cluster
+
+   58  kops delete cluster --name mustafa.k8s.local --yes
+
+   59  kops create cluster --name mustafa.k8s.local --zones us-east-2a,us-east-2b --master-count 1 --master-size m7i-flex.large --master-volume-size 30 --node-count 3 --node-size c7i-flex.large --node-volume-size 20 --image=ami-0f5fcdfbd140e4ab7
+
+   60  kops update cluster --name mustafa.k8s.local --yes --admin
+
+   61  kubectl get po
+
+   62  kubectl get no
+
+   63  kubectl create namespace argocd
+
+   64  kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+
+   65  kubectl get all -n argocd
+
+   66  kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'
+
+   67  kubectl get all -n argocd
+
+   68  argocd admin initial-password -n argocd
+
+   69  kubectl get secret -n argocd
+
+   70  curl -sSL -o argocd-linux-amd64 https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+
+   71  sudo install -m 555 argocd-linux-amd64 /usr/local/bin/argocd
+
+   72  rm argocd-linux-amd64
+
+   73  argocd admin initial-password -n argocd
+
+   74  kubectl get deploy
+
+   75  kubectl scale deploy my-app --replicas=4
+
+   76  kubectl get deploy
+
+   77  kubectl get po
+
+   78  kubectl create ns prometheus
+
+   79  kubectl create ns grafana
+
+   80  kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+   81  curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+
+   82  chmod 700 get_helm.sh
+
+   83  ./get_helm.sh
+
+   84  helm version
+
+   85  helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+
+   86  helm repo add grafana https://grafana.github.io/helm-charts
+
+   87  helm repo ls
+
+   88  helm repo update
+
+   89  helm install prometheus prometheus-community/prometheus --namespace prometheus --set alertmanager.persistentVolume.storageClass="gp2" --set server.persistentVolume.storageClass="gp2"
+
+   90  kubectl get all -n prometheus
+
+   91  helm install grafana grafana/grafana --namespace grafana --set persistence.storageClassName="gp2" --set persistence.enabled=true --set adminPassword='EKS!sAWSome' --set  service.type=LoadBalancer
+
+   92  kubectl get secret --namespace grafana grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+
+   93  kubectl get svc -n grafana
+
+   94  kubectl get po
+
+   95  kubectl run pod-1 --image=nginx
+
+   96  kubectl get po
+
+   97  kubectl run pod-2 --image=nginx
+
+   98  kops get cluster
+
+   99  kops delete cluster --name mustafa.k8s.local --yes
+
+  100  history
+
+
+
+
+
+
