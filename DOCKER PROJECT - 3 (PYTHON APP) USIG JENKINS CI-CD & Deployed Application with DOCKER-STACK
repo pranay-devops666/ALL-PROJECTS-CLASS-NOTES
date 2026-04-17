@@ -1,0 +1,631 @@
+Docker Class -19 on date 24/01/2026
+
+TOPIC: DOCKER PROJECT - 3 (PYTHON APP) USIG JENKINS CI/CD & Deployed Application with DOCKER-STACK
+=====================================================================================================
+
+We are going to build Online Library Application using Python Programming Language
+
+Code: Python
+Dockerfile
+DockerCompose
+
+
+CI/CD pipeline stages are 
+
+Code ----------> CQA --------> Build & Test (which is docker build)----------> Scan(using trivy) ------------> Registory -------> Deploy(using stack) ------> Post Build Actions
+
+
+First Launch an one Ec2-Instance 
+
+Ec2-Instances we need are
+
+1. Jenkins CI Server
+2. Master server
+3. Worker Node-1
+4. Worker Node-2
+
+overall we need 4 Instances
+
+Launch Inatsnce -----------> no. of instance: 2 --------> Instance Type: c7i-flex-large ---------> key pair --------> jenkins security group -------> 28gb ebs volume
+---------> launch instances 
+
+1. for master server
+2. for jenkins server
+
+Launch Inatsnce -----------> no. of instance: 2 --------> Instance Type: t3.micro ---------> key pair --------> jenkins security group -------> 28gb ebs volume
+---------> launch instances
+
+1. worker-1 server
+2. worker-1 server
+
+
+connect jenkins server & launch Jenkins Dashboard as well
+
+Create a Job ----------> name: Deployment
+
+pipeline {
+    agent any
+    stages {
+        stage ("Code") {
+            steps {
+                git "https://github.comdevops0014/python-code-library-app.git"
+            }
+        }
+    }
+}
+
+connect Master server and install java=17 & git into it
+
+yum install java-17-amazon-corretto -y
+
+yum install git -y
+
+then go to Jenkins Dashboard and setup agent
+
+go to jenkins dashboard ---------> select manage jenkins ----------> select nodes --------> new node --------> name: docker node ----------> no. of executors :2
+------> remote root direcory: /home/ec2-user/jenkins/ -------> labels: prod --------> usage: only build jobs with matching this node -------> launch agents via ssh
+------> host: private ip of master server -------> add credentials ------> kind: ssh username with private key -------> id: master ------> description: docker swarm
+-------> username: ec2-user-----------> private key: enter directly: copy and paste keypair data here --------> host key verification: non-verify strategy ---->save
+
+
+
+go to created Job and do configuration like below
+
+
+
+pipeline {
+    agent { 
+        node {
+          label 'prod'
+        }
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git "https://github.comdevops0014/python-code-library-app.git"
+            }
+        }
+    }
+}
+
+
+save & build now
+
+
+go to manage jenkins ----------> select plugins ---------> search as pipeline stage view and install it
+
+save & build now
+
+Build Job got success
+
+[root@MASTER ~]# cd /home/ec2-user/jenkins/workspace/PYTHONPROJECT
+[root@MASTER PYTHONPROJECT]# ll
+total 16
+-rw-rw-r--. 1 ec2-user ec2-user  219 Mar 26 05:59 Dockerfile
+-rw-rw-r--. 1 ec2-user ec2-user  689 Mar 26 05:59 README.md
+-rw-rw-r--. 1 ec2-user ec2-user 2643 Mar 26 05:59 app.py
+drwxrwxr-x. 2 ec2-user ec2-user   71 Mar 26 05:59 auth
+drwxrwxr-x. 2 ec2-user ec2-user   71 Mar 26 05:59 book
+drwxrwxr-x. 2 ec2-user ec2-user   73 Mar 26 05:59 borrow
+drwxrwxr-x. 2 ec2-user ec2-user   44 Mar 26 05:59 database
+-rw-rw-r--. 1 ec2-user ec2-user   39 Mar 26 05:59 requirements.txt
+drwxrwxr-x. 2 ec2-user ec2-user   98 Mar 26 05:59 templates
+[root@MASTER PYTHONPROJECT]# 
+
+
+first stage is done
+
+
+nowwe need to do 2nd stage here
+
+go to Jenkins server and launch the server
+
+install docker here in jenkins server
+
+yum install docker & systemctl start docker -y
+
+
+now install the sonarqube in jenkins server
+
+[root@JENKINS ~]# docker run -itd --name sonar -p 9000:9000 sonarqube:lts-community
+Unable to find image 'sonarqube:lts-community' locally
+lts-community: Pulling from library/sonarqube
+60d98d907669: Pull complete 
+e24a8b9e652f: Pull complete 
+f3929ce9ef98: Pull complete 
+1df735f481ad: Pull complete 
+5d5a1fad7028: Pull complete 
+eb27e3a98da1: Pull complete 
+c7ad1fe61e07: Pull complete 
+4f4fb700ef54: Pull complete 
+Digest: sha256:f709975ab31d2d08f5a3ae2dc73a31ee011afc8cf28845082c17c55d45df9df5
+Status: Downloaded newer image for sonarqube:lts-community
+7ea196e4e63ca6ac367ad6de905357a5fb8130dcd87af857abd13ad44aa5c4ba
+[root@JENKINS ~]# docker ps
+CONTAINER ID   IMAGE                     COMMAND                  CREATED         STATUS         PORTS                                       NAMES
+7ea196e4e63c   sonarqube:lts-community   "/opt/sonarqube/dock…"   6 seconds ago   Up 4 seconds   0.0.0.0:9000->9000/tcp, :::9000->9000/tcp   sonar
+[root@JENKINS ~]#  --------->
+
+try to access sonarqube dashboard with port number 9000
+
+Sonarqube dashboard has been launched been launched 
+
+
+select projects ---------> create new project --------> select manual --------> create --------. intigrating with jenkins ------. github ------> create a  jenkins file
+ here select others --------> 
+
+
+go to jenkins dashboard -----------> select manage jenkins ----------> select plugins --------> search as sonarqube scanner ------> install it
+
+
+
+go to jenkins dashboard -----------> select manage jenkins ----------> select system --------> select sonarqube integration --------> name : my sonar --->
+
+serverl url : give here sonarqube dashboard url upto 9000 -------> credentials ---------> kind: secret text --------> in secret: copy & paste the password 
+which we get from sonarqube dashboard (go to sonarqube dashboard -----> select account ------. new token --------> create token ) --------> ID: sonar-token
+description: sonarqube password ----------> save
+
+go to jenkins dashboard -----------> select manage jenkins ----------> select tools --------> search as sonarqube scanner ------> install
+
+
+upto now sonarqube integration has been completed 
+
+now will do integrate with our jenkins pipeline like below
+
+
+
+go to created Job and do configuration like below
+
+
+
+pipeline {
+    agent {
+        node {
+            label 'prod'
+        }
+    }
+    environment {
+        scannerHome = tool 'mysonar'
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/pranay-devops666/python-code-library-app.git'
+            }
+        }
+        stage ("CQA") {
+            steps {
+                withSonarQubeEnv("mysonar") {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+    }
+}
+
+save & build now
+
+Build job got success
+
+
+Now next stage is to build the Image through Docker
+
+Before going to execute the below pipeline need to be install Docker in Master server
+
+[root@MASTER ~]# yum install docker -y && systemctl start docker
+
+[root@MASTER ~]# chmod 777 /var/run/docker.sock
+
+pipeline {
+    agent {
+        node {
+            label 'prod'
+        }
+    }
+    environment {
+        scannerHome = tool 'mysonar'
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/pranay-devops666/python-code-library-app.git'
+            }
+        }
+        stage ("CQA") {
+            steps {
+                withSonarQubeEnv("mysonar") {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage ("Image") {
+            steps {
+                sh '''
+                    docker build -t dbimage database/
+                    docker build -t authimage auth/
+                    docker build -t bookimage book/
+                    docker build -t borrowimage borrow/
+                    docker build -t appimage .
+                   '''
+            }
+        }
+    }
+}
+
+
+save & build now
+
+Build job got success
+
+
+[root@MASTER ~]# docker images
+REPOSITORY    TAG       IMAGE ID       CREATED          SIZE
+appimage      latest    620d472ac607   32 seconds ago   232MB
+bookimage     latest    226b79f69ccb   32 seconds ago   232MB
+borrowimage   latest    92b7caeeabc1   32 seconds ago   232MB
+authimage     latest    590803a50dcd   33 seconds ago   232MB
+dbimage       latest    95428de8d968   40 seconds ago   432MB
+[root@MASTER ~]# 
+
+Now next stage to Scan those above images through Trivy Tool
+
+For tool Trivy Install trivy like below
+
+
+[root@MASTER ~]# sudo yum install -y wget && wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh && sudo sh install.sh -b /usr/local/bin
+Last metadata expiration check: 0:58:33 ago on Thu Mar 26 05:49:12 2026.
+Package wget-1.21.3-1.amzn2023.0.4.x86_64 is already installed.
+Dependencies resolved.
+Nothing to do.
+Complete!
+--2026-03-26 06:47:45--  https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh
+Resolving raw.githubusercontent.com (raw.githubusercontent.com)... 185.199.109.133, 185.199.110.133, 185.199.108.133, ...
+Connecting to raw.githubusercontent.com (raw.githubusercontent.com)|185.199.109.133|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 9945 (9.7K) [text/plain]
+Saving to: ‘install.sh’
+
+install.sh                                100%[====================================================================================>]   9.71K  --.-KB/s    in 0s      
+
+2026-03-26 06:47:45 (170 MB/s) - ‘install.sh’ saved [9945/9945]
+
+aquasecurity/trivy info checking GitHub for latest tag
+aquasecurity/trivy info found version: 0.69.3 for v0.69.3/Linux/64bit
+aquasecurity/trivy info installed /usr/local/bin/trivy
+[root@MASTER ~]# trivy --version
+Version: 0.69.3
+[root@MASTER ~]# 
+
+
+
+pipeline {
+    agent {
+        node {
+            label 'prod'
+        }
+    }
+    environment {
+        scannerHome = tool 'mysonar'
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/pranay-devops666/python-code-library-app.git'
+            }
+        }
+        stage ("CQA") {
+            steps {
+                withSonarQubeEnv("mysonar") {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage ("Image") {
+            steps {
+                sh '''
+                    docker build -t dbimage database/
+                    docker build -t authimage auth/
+                    docker build -t bookimage book/
+                    docker build -t borrowimage borrow/
+                    docker build -t appimage .
+                   '''
+            }
+        }
+        stage ("Scan") {
+            steps {
+                sh 'trivy image dbimage'
+                sh 'trivy image authimage'
+                sh 'trivy image bookimage'
+                sh 'trivy image borrowimage'
+                sh 'trivy image appimage'
+                
+            }
+        }
+    }
+}
+
+save & build now
+
+Build job got success
+
+
+
+Now next stage to Docker Tag Push (Registry) simply we can mention as Registry those above images
+
+pipeline {
+    agent {
+        node {
+            label 'prod'
+        }
+    }
+    environment {
+        scannerHome = tool 'mysonar'
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/pranay-devops666/python-code-library-app.git'
+            }
+        }
+        stage ("CQA") {
+            steps {
+                withSonarQubeEnv("mysonar") {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage ("Image") {
+            steps {
+                sh '''
+                    docker build -t dbimage database/
+                    docker build -t authimage auth/
+                    docker build -t bookimage book/
+                    docker build -t borrowimage borrow/
+                    docker build -t appimage .
+                   '''
+            }
+        }
+        stage ("Scan") {
+            steps {
+                sh 'trivy image dbimage'
+                sh 'trivy image authimage'
+                sh 'trivy image bookimage'
+                sh 'trivy image borrowimage'
+                sh 'trivy image appimage'
+                
+            }
+        }
+        stage ("Tag") {
+            steps {
+                sh 'docker tag dbimage pranay419/babu2026:dbimage'
+                sh 'docker tag authimage pranay419/babu2026:authimage'
+                sh 'docker tag bookimage pranay419/babu2026:bookimage'
+                sh 'docker tag borrowimage pranay419/babu2026:borrowimage'
+                sh 'docker tag appimage pranay419/babu2026:appimage'
+            }
+        }
+        stage ("Registry") {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'dockerbub') {
+                        sh 'docker push  pranay419/babu2026:dbimage'
+                        sh 'docker push  pranay419/babu2026:authimage'
+                        sh 'docker push  pranay419/babu2026:bookimage'
+                        sh 'docker push  pranay419/babu2026:borrowimage'
+                        sh 'docker push  pranay419/babu2026:appimage'
+                    }
+                }
+            }
+        }
+    }
+}
+
+save & build now
+
+Build job got success
+
+Go to Github in this repo (https://github.com/pranay-devops666/python-code-library-app.git) ------------> go to master branch -----> create one file as compose.yml
+---------> and do change slike below
+
+---
+services:
+  db:
+    image: pranay416/babu2026:dbimage
+    ports:
+      - "3306:3306"
+    deploy:
+      replicas: 1
+  auth_service:
+    image: pranay416/babu2026:authimage
+    ports:
+      - "5001:5001"
+    deploy:
+      replicas: 1
+    depends_on:
+      - db
+  book_service:
+    image: pranay416/babu2026:bookimage
+    ports:
+      - "5002:5002"
+    deploy:
+      replicas: 1
+    depends_on:
+      - db
+  borrow_service:
+    image: pranay416/babu2026:borrowimage
+    ports:
+      - "5003:5003"
+    deploy:
+      replicas: 1
+    depends_on:
+      - db
+  app_service:
+    image: pranay416/babu2026:appimage
+    ports:
+      - "5000:5000"
+    deploy:
+      replicas: 1
+    depends_on:
+      - auth_service
+      - book_service
+      - borrow_service
+
+save and commit changes
+
+
+Now taking this compose file we need to deploy through docker stack
+
+create cluster and do deploy on stack like below
+
+do connect worker-node-1 & worker-node-2 and install cluster in it------------> do install docker in it
+
+[root@MASTER ~]# docker swarm init
+Swarm initialized: current node (l7t23bri1l0xe19gn5w8x0swb) is now a manager.
+
+To add a worker to this swarm, run the following command:
+
+    docker swarm join --token SWMTKN-1-5kef2gjv1pj37egwo0mac7qyxdh7nl4kobi44er4bfzfh4fld0-eqlzd29r1nl4to9epvlh1wjfj 172.31.95.89:2377
+
+To add a manager to this swarm, run 'docker swarm join-token manager' and follow the instructions.
+
+[root@MASTER ~]# 
+
+[root@WORKER-NODE-1 ~]# docker swarm join --token SWMTKN-1-5kef2gjv1pj37egwo0mac7qyxdh7nl4kobi44er4bfzfh4fld0-eqlzd29r1nl4to9epvlh1wjfj 172.31.95.89:2377
+This node joined a swarm as a worker.
+[root@WORKER-NODE-1 ~]# 
+
+[root@WORKER-NODE-2 ~]# docker swarm join --token SWMTKN-1-5kef2gjv1pj37egwo0mac7qyxdh7nl4kobi44er4bfzfh4fld0-eqlzd29r1nl4to9epvlh1wjfj 172.31.95.89:2377
+This node joined a swarm as a worker.
+[root@WORKER-NODE-2 ~]# 
+
+Next need to be install docker-compose on Master Server
+
+# Download the current stable release of Docker Compose
+sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+# Apply executable permissions
+sudo chmod +x /usr/local/bin/docker-compose
+# Create a symbolic link
+sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
+
+# Install using pip (Python package manager)
+sudo yum install -y python3-pip
+sudo pip3 install docker-compose
+
+#check version
+docker-compose --version
+
+now need to be write command for deploy on Job Pipelinelike below
+
+pipeline {
+    agent {
+        node {
+            label 'prod'
+        }
+    }
+    environment {
+        scannerHome = tool 'mysonar'
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/pranay-devops666/python-code-library-app.git'
+            }
+        }
+        stage ("CQA") {
+            steps {
+                withSonarQubeEnv("mysonar") {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage ("Image") {
+            steps {
+                sh '''
+                    docker build -t dbimage database/
+                    docker build -t authimage auth/
+                    docker build -t bookimage book/
+                    docker build -t borrowimage borrow/
+                    docker build -t appimage .
+                   '''
+            }
+        }
+        stage ("Scan") {
+            steps {
+                sh 'trivy image dbimage'
+                sh 'trivy image authimage'
+                sh 'trivy image bookimage'
+                sh 'trivy image borrowimage'
+                sh 'trivy image appimage'
+                
+            }
+        }
+        stage ("Tag") {
+            steps {
+                sh 'docker tag dbimage pranay419/babu2026:dbimage'
+                sh 'docker tag authimage pranay419/babu2026:authimage'
+                sh 'docker tag bookimage pranay419/babu2026:bookimage'
+                sh 'docker tag borrowimage pranay419/babu2026:borrowimage'
+                sh 'docker tag appimage pranay419/babu2026:appimage'
+            }
+        }
+        stage ("Registry") {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'dockerbub') {
+                        sh 'docker push  pranay419/babu2026:dbimage'
+                        sh 'docker push  pranay419/babu2026:authimage'
+                        sh 'docker push  pranay419/babu2026:bookimage'
+                        sh 'docker push  pranay419/babu2026:borrowimage'
+                        sh 'docker push  pranay419/babu2026:appimage'
+                    }
+                }
+            }
+        }
+        stage ("Deploy") {
+            steps {
+                sh 'docker stack deploy babu --compose-file=compose.yml'
+            }
+        }
+    }
+}
+
+save & build now
+
+Build job got success
+
+
+[root@MASTER ~]# docker service ls
+ID             NAME                  MODE         REPLICAS   IMAGE                            PORTS
+i7ouox1d0bly   babu_app_service      replicated   1/1        pranay419/babu2026:appimage      *:5000->5000/tcp
+p7jsnugh2egi   babu_auth_service     replicated   1/1        pranay419/babu2026:authimage     *:5001->5001/tcp
+qz9z8olnov0y   babu_book_service     replicated   1/1        pranay419/babu2026:bookimage     *:5002->5002/tcp
+awfo9oo46ar2   babu_borrow_service   replicated   1/1        pranay419/babu2026:borrowimage   *:5003->5003/tcp
+ldmc2t09nytd   babu_db               replicated   1/1        pranay419/babu2026:dbimage       *:3306->3306/tcp
+[root@MASTER ~]# 
+
+Now try to access the application with worker-node-1 or worker-node-2 public IP:5000
+
+http://52.90.107.201:5000/signin
+
+successfully launched an application
+
+Now we need to distribute the traffic equally to worker-node-1 and  worker-node-2 to access the application request from users in real time  is 
+Need to create LoadBalancer
+
+Go to aws dashboard and need to create target group here ----------> Go to aws dashboard search as target groups-----------> 
+
+what is target groups means in which servers we need to send the traffic equally for that purpose we need to create a target groups for those servers to distribute the 
+traffic equally 
+
+Go to aws dashboard and need to create target group here ----------> Go to aws dashboard search as target groups-----------> create target group------> select instances
+-----------> give port :5000---------> next-----> select 2 worker nodes------> select including as pendig before--------> next----------> create 
+
+target group has been created 
+
+Now we will create Load Balancers
+
+
+
+
+
+
