@@ -1,0 +1,926 @@
+Kubernetes AUTOMATION K8s PROJECT USING EKS (E-COMMERCE APPLICATION)
+
+
+
+Kubernetes K8s PROJECT USING EKS (E-COMMERCE APPLICATION)
+==============================================================
+
+10 MICRO SERVICES PROJECT
+( GitHub - usubbu/microservices-project )
+STEP-1: LAUNCH T2.LARGE INSTANCE WITH ADMIN PERMISSIONS
+STEP-2: Install AWS CLI, kubectl, and eksctl
+Install AWS CLI LATEST VERSION
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+Install KUBECTL:
+curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.34.1/2025-09-
+19/bin/linux/amd64/kubectl
+chmod +x ./kubectl
+sudo mv ./kubectl /usr/local/bin
+
+Install EKSCTL:
+curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -
+s)_amd64.tar.gz" | tar xz -C /tmp
+sudo mv /tmp/eksctl /usr/local/bin
+eksctl version
+(or)
+
+STEP-3: Create EKS Cluster
+create cluster:
+eksctl create cluster --name=EKS-1 --region=ap-south-1 --zones=ap-south-1a,ap-south-1b --without-nodegroup
+Attach IAM Role:
+eksctl utils associate-iam-oidc-provider --region ap-south-1 --cluster EKS-1 --approve
+create NodeGroup:
+eksctl create nodegroup --cluster=EKS-1 --region=ap-south-1 --name=node2 --node-type=t3.medium --nodes=3 -
+-nodes-min=2 --nodes-max=4 --node-volume-size=20 --ssh-access --ssh-public-key=mustafakey-pair --
+managed --asg-access --external-dns-access --full-ecr-access --appmesh-access --alb-ingress-access
+UPDATE CLUSTER:
+aws eks update-kubeconfig --name EKS-1 --region ap-south-1
+
+STEP-4: Install Jenkins & Docker
+sudo dnf update -y
+sudo dnf install java-21-amazon-corretto -y
+sudo wget -O /etc/yum.repos.d/jenkins.repo \
+https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2026.key
+sudo dnf install jenkins -y
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+yum install docker -y && systemctl start docker
+chmod 777 /var/run/docker.sock
+STEP-5: Install Plugins: Install the following Jenkins plugins:
+Docker Pipeline
+Kubernetes
+Kubernetes CLI
+STEP-6: Now add the dockerhub Credentials
+STEP-:7 Create name space & Service Account
+Namespace: kubectl create ns webapps
+ServiceAccount:
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+ name: jenkins
+ namespace: webapps
+Create Role:
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+ name: app-role
+ namespace: webapps
+rules:
+ - apiGroups:
+ - ""
+ - apps
+ - autoscaling
+ - batch
+ - extensions
+ - policy
+ - rbac.authorization.k8s.io
+resources
+- pods
+ - componentstatuses
+ - configmaps
+ - daemonsets
+ - deployments
+ - events
+ - endpoints
+ - horizontalpodautoscalers
+ - ingress
+ - jobs
+ - limitranges
+ - namespaces
+ - nodes
+ - pods
+ - persistentvolumes
+ - persistentvolumeclaims
+ - resourcequotas
+ - replicasets
+ - replicationcontrollers
+ - serviceaccounts
+ - services
+ verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+Bind the role to service account:
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+ name: app-rolebinding
+ namespace: webapps
+roleRef:
+ apiGroup: rbac.authorization.k8s.io
+ kind: Role
+ name: app-role
+subjects:
+- namespace: webapps
+ kind: ServiceAccount
+ name: jenkins
+Generate token using service account in the namespace:
+
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/service-account-token
+metadata:
+ name: mysecretname
+ annotations:
+ kubernetes.io/service-account.name: jenkins
+Now it will generate a token, Copy this token and create the credential in jenkins named k8-
+token.
+
+Go to credentials >> select secret text >> copy paste it and id as k8s-token
+STEP-7: Set Up Multibranch Pipeline
+Add this Jenkins file on your github repo
+pipeline {
+agent any
+stages {
+stage('Deploy To Kubernetes') {
+steps {
+withKubeCredentials(kubectlCredentials: [[caCertificate: '', clusterName: 'EKS-1',
+contextName: '', credentialsId: 'k8-token', namespace: 'webapps', serverUrl: 'add-your-ekscluster-url']]) {
+sh "kubectl apply -f deployment-service.yml"
+}
+}
+}
+stage('verify Deployment') {
+steps {
+withKubeCredentials(kubectlCredentials: [[caCertificate: '', clusterName: 'EKS-1',
+contextName: '', credentialsId: 'k8-token', namespace: 'add-your-eks-cluster-url']]) {
+sh "kubectl get svc -n webapps"
+}
+}
+}
+}
+}
+command to delete cluster : eksctl delete cluster --name EKS-1 --region ap-south-1
+
+
+
+
+
+First Before going to start we will do setup an EKS Cluster
+
+why because while creating an EKS Cluster it will take minimum 40 minutes time to create it
+
+In this during particular time of 40 minutes we will do discuss project structure explanation
+
+As of now we just created self managed clusters are what we created is kops cluster and minikube
+
+these two are self managed type clusters
+
+Now EKS is completly relates to cloud managed cluster
+
+difference b/w both of them is kops & minikube comes under self managed clusters this both managed by us
+
+EKS (ELASTIC KUBERNETES SERVICE) comes under in this EKS control-planel is managed by AWS and control-planel will not be visible for us 
+only worker nodes we will do managed by us
+
+go to official document once of eks aws -------> eneter
+
+login to aws account
+
+launch an one Instance for to create EKS ----------> name:myeks ---------> instance type: m7i-flex.large------> with keypair------> security groups:jenkins----->
+attach IAM role o the instance ------------> ebs volume: 20 gb-------> launch instace and connect it
+
+here we are going to create EKS through CLI 
+
+go to aws Dashboard and search as EKS---------> select create cluster
+
+go to ec2-instance 
+
+need to instal aws cli version go to official page https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+
+select linux--------> 3 commands we will see simply copy & paste those 3 commands in ec2-instance 
+
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+
+Next need to install Kubectl
+
+search as install kubectl & eksctl ------> open official document ------> select linux
+
+[root@MY-EKS ~]# curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.35.2/2026-02-27/bin/linux/amd64/kubectl
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 57228k 100 57228k   0     0 30161k     0   0:00:01  0:00:01 --:--:-- 30151k
+[root@MY-EKS ~]# 
+[root@MY-EKS ~]# ll
+total 125080
+drwxr-xr-x. 3 root root       78 Mar 23 18:15 aws
+-rw-r--r--. 1 root root 69473464 Mar 24 06:50 awscliv2.zip
+-rw-r--r--. 1 root root 58601656 Mar 24 06:54 kubectl
+[root@MY-EKS ~]# chmod +x kubectl 
+[root@MY-EKS ~]# ll
+total 125080
+drwxr-xr-x. 3 root root       78 Mar 23 18:15 aws
+-rw-r--r--. 1 root root 69473464 Mar 24 06:50 awscliv2.zip
+-rwxr-xr-x. 1 root root 58601656 Mar 24 06:54 kubectl
+[root@MY-EKS ~]# mv kubectl /usr/local/bin/
+[root@MY-EKS ~]# ll
+total 67848
+drwxr-xr-x. 3 root root       78 Mar 23 18:15 aws
+-rw-r--r--. 1 root root 69473464 Mar 24 06:50 awscliv2.zip
+[root@MY-EKS ~]# 
+[root@MY-EKS ~]# kubectl version
+Client Version: v1.35.2-eks-f69f56f
+Kustomize Version: v5.7.1
+The connection to the server localhost:8080 was refused - did you specify the right host or port?
+[root@MY-EKS ~]# 
+
+
+Now need to Install EKS 
+
+search as install eksctl --------- select this github url https://github.com/eksctl-io/eksctl ---------> scroll down, select fr unix -------> copy all commands and
+paste in ec2-instance like below
+
+[root@MY-EKS ~]# # for ARM systems, set ARCH to: `arm64`, `armv6` or `armv7`
+ARCH=amd64
+PLATFORM=$(uname -s)_$ARCH
+
+curl -sLO "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_$PLATFORM.tar.gz"
+
+# (Optional) Verify checksum
+curl -sL "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_checksums.txt" | grep $PLATFORM | sha256sum --check
+
+tar -xzf eksctl_$PLATFORM.tar.gz -C /tmp && rm eksctl_$PLATFORM.tar.gz
+
+sudo install -m 0755 /tmp/eksctl /usr/local/bin && rm /tmp/eksctl
+
+EKSCTL also installed here
+
+[root@MY-EKS ~]# eksctl version
+0.224.0
+[root@MY-EKS ~]# aws --version
+aws-cli/2.34.15 Python/3.14.3 Linux/6.1.163-186.299.amzn2023.x86_64 exe/x86_64.amzn.2023
+[root@MY-EKS ~]# 
+
+Now all we need is cluster lets create an cluster now
+
+
+[root@MY-EKS ~]# eksctl create cluster --name=EKS-1 --region=us-east-1 --zones=us-east-1a,us-east-1b --without-nodegroup ----------------------------------------->
+2026-03-24 07:18:32 [ℹ]  eksctl version 0.224.0
+2026-03-24 07:18:32 [ℹ]  using region us-east-1
+2026-03-24 07:18:32 [ℹ]  subnets for us-east-1a - public:192.168.0.0/19 private:192.168.64.0/19
+2026-03-24 07:18:32 [ℹ]  subnets for us-east-1b - public:192.168.32.0/19 private:192.168.96.0/19
+2026-03-24 07:18:32 [!]  Auto Mode will be enabled by default in an upcoming release of eksctl. This means managed node groups and managed networking add-ons will no longer be created by default. To maintain current behavior, explicitly set 'autoModeConfig.enabled: false' in your cluster configuration. Learn more: https://eksctl.io/usage/auto-mode/
+2026-03-24 07:18:32 [ℹ]  using Kubernetes version 1.34
+2026-03-24 07:18:32 [ℹ]  creating EKS cluster "EKS-1" in "us-east-1" region with 
+2026-03-24 07:18:32 [ℹ]  if you encounter any issues, check CloudFormation console or try 'eksctl utils describe-stacks --region=us-east-1 --cluster=EKS-1'
+2026-03-24 07:18:32 [ℹ]  Kubernetes API endpoint access will use default of {publicAccess=true, privateAccess=false} for cluster "EKS-1" in "us-east-1"
+2026-03-24 07:18:32 [ℹ]  CloudWatch logging will not be enabled for cluster "EKS-1" in "us-east-1"
+2026-03-24 07:18:32 [ℹ]  you can enable it with 'eksctl utils update-cluster-logging --enable-types={SPECIFY-YOUR-LOG-TYPES-HERE (e.g. all)} --region=us-east-1 --cluster=EKS-1'
+2026-03-24 07:18:32 [ℹ]  default addons metrics-server, vpc-cni, kube-proxy, coredns were not specified, will install them as EKS addons
+2026-03-24 07:18:32 [ℹ]  
+2 sequential tasks: { create cluster control plane "EKS-1", 
+    2 sequential sub-tasks: { 
+        1 task: { create addons },
+        wait for control plane to become ready,
+    } 
+}
+2026-03-24 07:18:32 [ℹ]  building cluster stack "eksctl-EKS-1-cluster"
+2026-03-24 07:18:32 [ℹ]  deploying stack "eksctl-EKS-1-cluster"
+2026-03-24 07:19:02 [ℹ]  waiting for CloudFormation stack "eksctl-EKS-1-cluster"
+2026-03-24 07:19:32 [ℹ]  waiting for CloudFormation stack "eksctl-EKS-1-cluster"
+2026-03-24 07:20:32 [ℹ]  waiting for CloudFormation stack "eksctl-EKS-1-cluster"
+2026-03-24 07:21:32 [ℹ]  waiting for CloudFormation stack "eksctl-EKS-1-cluster"
+2026-03-24 07:22:33 [ℹ]  waiting for CloudFormation stack "eksctl-EKS-1-cluster"
+2026-03-24 07:23:33 [ℹ]  waiting for CloudFormation stack "eksctl-EKS-1-cluster"
+2026-03-24 07:24:33 [ℹ]  waiting for CloudFormation stack "eksctl-EKS-1-cluster"
+2026-03-24 07:25:33 [ℹ]  waiting for CloudFormation stack "eksctl-EKS-1-cluster"
+2026-03-24 07:26:33 [ℹ]  waiting for CloudFormation stack "eksctl-EKS-1-cluster"
+2026-03-24 07:27:33 [ℹ]  waiting for CloudFormation stack "eksctl-EKS-1-cluster"
+2026-03-24 07:27:34 [!]  recommended policies were found for "vpc-cni" addon, but since OIDC is disabled on the cluster, eksctl cannot configure the requested permissions; the recommended way to provide IAM permissions for "vpc-cni" addon is via pod identity associations; after addon creation is completed, add all recommended policies to the config file, under `addon.PodIdentityAssociations`, and run `eksctl update addon`
+2026-03-24 07:27:34 [ℹ]  creating addon: vpc-cni
+2026-03-24 07:27:34 [ℹ]  successfully created addon: vpc-cni
+2026-03-24 07:27:34 [ℹ]  creating addon: kube-proxy
+2026-03-24 07:27:35 [ℹ]  successfully created addon: kube-proxy
+2026-03-24 07:27:35 [ℹ]  creating addon: coredns
+2026-03-24 07:27:35 [ℹ]  successfully created addon: coredns
+2026-03-24 07:29:35 [ℹ]  waiting for the control plane to become ready
+2026-03-24 07:29:36 [✔]  saved kubeconfig as "/root/.kube/config"
+2026-03-24 07:29:36 [ℹ]  no tasks
+2026-03-24 07:29:36 [✔]  all EKS cluster resources for "EKS-1" have been created
+2026-03-24 07:29:36 [ℹ]  creating addon: metrics-server
+2026-03-24 07:29:37 [ℹ]  successfully created addon: metrics-server
+2026-03-24 07:29:38 [ℹ]  kubectl command should work with "/root/.kube/config", try 'kubectl get nodes'
+2026-03-24 07:29:38 [✔]  EKS cluster "EKS-1" in "us-east-1" region is ready
+[root@MY-EKS ~]# eksctl get cluster ------------------------------------------------------------------------>
+Error: AWS Region must be set, please set the AWS Region in AWS config file or as environment variable
+[root@MY-EKS ~]# export AWS_DEFAULT_REGION=us-east-1 ------------------------------------------------------------------------>
+[root@MY-EKS ~]# eksctl get cluster ------------------------------------------------------------------------>
+NAME    REGION          EKSCTL CREATED
+EKS-1   us-east-1       True
+[root@MY-EKS ~]# 
+
+
+
+It will take some time to create 
+
+In that during time we will discuss about an our project
+
+we are going to deploy an E-Commerce application like flipkart, Amazon etc
+
+In this E-Commerce there is a lot of applications are exist
+
+In this E-Commerce we have multiple branches for application code for combining allthose multiple branches we can say as E-Commerce application code
+
+By using Jenins in the inside Jenkins we will use multistage pipeline option to run all the multiple branches at a time 
+
+By writing Jenkins file like below
+
+pipeline {
+agent any
+  stages {
+    stage ("build") {
+      steps {
+        sh 'docker build -t fe-img .'
+        }
+      }
+  }
+}
+
+
+
+Now we need to create a Node Group
+
+we need to create an IAM role
+
+[root@MY-EKS ~]# eksctl utils associate-iam-oidc-provider --region us-east-1 --cluster EKS-1 --approve ---------------------------------->
+2026-03-24 09:01:56 [ℹ]  will create IAM Open ID Connect provider for cluster "EKS-1" in "us-east-1"
+2026-03-24 09:01:56 [✔]  created IAM Open ID Connect provider for cluster "EKS-1" in "us-east-1"
+[root@MY-EKS ~]# 
+[root@MY-EKS ~]# eksctl create nodegroup --cluster=EKS-1 --region=us-east-1 --name=node2 --node-type=c7i-flex.large --nodes=3 --nodes-min=2 --nodes-max=4 
+--node-volume-size=20 --ssh-access --ssh-public-key=Anjeneyakeypair --managed --asg-access --external-dns-access --full-ecr-access --appmesh-access 
+--alb-ingress-access ---------------------------------->
+2026-03-24 09:25:28 [ℹ]  will use version 1.34 for new nodegroup(s) based on control plane version
+2026-03-24 09:25:29 [ℹ]  nodegroup "node2" will use "" [AmazonLinux2023/1.34]
+2026-03-24 09:25:29 [ℹ]  using EC2 key pair "Anjeneyakeypair"
+2026-03-24 09:25:29 [ℹ]  1 nodegroup (node2) was included (based on the include/exclude rules)
+2026-03-24 09:25:29 [ℹ]  will create a CloudFormation stack for each of 1 managed nodegroups in cluster "EKS-1"
+2026-03-24 09:25:29 [ℹ]  
+2 sequential tasks: { fix cluster compatibility, 1 task: { 1 task: { create managed nodegroup "node2" } } 
+}
+2026-03-24 09:25:29 [ℹ]  checking cluster stack for missing resources
+2026-03-24 09:25:29 [ℹ]  cluster stack has all required resources
+2026-03-24 09:25:29 [ℹ]  building managed nodegroup stack "eksctl-EKS-1-nodegroup-node2"
+2026-03-24 09:25:30 [ℹ]  deploying stack "eksctl-EKS-1-nodegroup-node2"
+2026-03-24 09:25:30 [ℹ]  waiting for CloudFormation stack "eksctl-EKS-1-nodegroup-node2"
+2026-03-24 09:26:00 [ℹ]  waiting for CloudFormation stack "eksctl-EKS-1-nodegroup-node2"
+2026-03-24 09:26:38 [ℹ]  waiting for CloudFormation stack "eksctl-EKS-1-nodegroup-node2"
+2026-03-24 09:27:52 [ℹ]  waiting for CloudFormation stack "eksctl-EKS-1-nodegroup-node2"
+2026-03-24 09:27:52 [ℹ]  no tasks
+2026-03-24 09:27:52 [✔]  created 0 nodegroup(s) in cluster "EKS-1"
+2026-03-24 09:27:52 [ℹ]  nodegroup "node2" has 3 node(s)
+2026-03-24 09:27:52 [ℹ]  node "ip-192-168-24-0.ec2.internal" is ready
+2026-03-24 09:27:52 [ℹ]  node "ip-192-168-43-48.ec2.internal" is ready
+2026-03-24 09:27:52 [ℹ]  node "ip-192-168-56-52.ec2.internal" is ready
+2026-03-24 09:27:52 [ℹ]  waiting for at least 2 node(s) to become ready in "node2"
+2026-03-24 09:27:52 [ℹ]  nodegroup "node2" has 3 node(s)
+2026-03-24 09:27:52 [ℹ]  node "ip-192-168-24-0.ec2.internal" is ready
+2026-03-24 09:27:52 [ℹ]  node "ip-192-168-43-48.ec2.internal" is ready
+2026-03-24 09:27:52 [ℹ]  node "ip-192-168-56-52.ec2.internal" is ready
+2026-03-24 09:27:52 [✔]  created 1 managed nodegroup(s) in cluster "EKS-1"
+2026-03-24 09:27:52 [ℹ]  checking security group configuration for all nodegroups
+2026-03-24 09:27:52 [ℹ]  all nodegroups have up-to-date cloudformation templates
+[root@MY-EKS ~]# 
+
+
+[root@MY-EKS ~]# aws eks update-kubeconfig --name EKS-1 --region us-east-1 ----------------------------------> 
+Added new context arn:aws:eks:us-east-1:463766821376:cluster/EKS-1 to /root/.kube/config
+[root@MY-EKS ~]# 
+
+[root@MY-EKS ~]# kubectl get no
+NAME                            STATUS   ROLES    AGE   VERSION
+ip-192-168-24-0.ec2.internal    Ready    <none>   17m   v1.34.4-eks-f69f56f
+ip-192-168-43-48.ec2.internal   Ready    <none>   17m   v1.34.4-eks-f69f56f
+ip-192-168-56-52.ec2.internal   Ready    <none>   17m   v1.34.4-eks-f69f56f
+[root@MY-EKS ~]#  
+
+No wwe need to install the Jenkins
+
+[root@MY-EKS ~]# yum install java-17-amazon-corretto -y ---------------------------------------------->
+
+[root@MY-EKS ~]#sudo yum update –y
+sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+sudo yum upgrade
+sudo yum install java-17-amazon-corretto -y
+sudo yum install jenkins git -y
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+sudo systemctl status jenkins
+
+http://52.91.36.8:8080/ -----------------------> Jenkins Dashboard has been created
+
+Go to Jenkins Dashboard and do some configurations like installing the plugins, and Adding Dockerhub credentials in it
+
+Go to Manage Jenkins ----------> select plugins----------> install plugins like pipeline stage view, docker pipeline, kubernetes--------> ok
+
+Go to Manage Jenkins ----------> select credentials ------> selct global ---------> add credentials -------> kind: usrename with passward----------> add here
+dockerhub credentials
+
+
+Global
+Add Credentials
+Credentials that should be available everywhere.
+docker-cred
+pranay419/******
+docker credentials
+
+Need to add Kubernetes credentials as well
+
+
+
+
+
+Now need to install SONARQUBE
+
+[root@ip-172-31-33-227 ~]# docker run -itd --name sonar -p 9000:9000 sonarqube:lts-community ------------------------>
+Unable to find image 'sonarqube:lts-community' locally
+lts-community: Pulling from library/sonarqube
+60d98d907669: Pull complete 
+e24a8b9e652f: Pull complete 
+f3929ce9ef98: Pull complete 
+1df735f481ad: Pull complete 
+5d5a1fad7028: Pull complete 
+eb27e3a98da1: Pull complete 
+c7ad1fe61e07: Pull complete 
+4f4fb700ef54: Pull complete 
+Digest: sha256:f709975ab31d2d08f5a3ae2dc73a31ee011afc8cf28845082c17c55d45df9df5
+Status: Downloaded newer image for sonarqube:lts-community
+11b6723b19d0d4fc6291ac14ab88664d3f8c6c5bbe80f4bd2617170b5380825b
+ 
+[root@MY-EKS ~]# kubectl create ns webapps
+namespace/webapps created
+
+
+[root@MY-EKS ~]# vim svc-account.yml
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jenkins
+  namespace: webapps
+
+:wq
+
+[root@MY-EKS ~]# kubectl create -f svc-account.yml
+serviceaccount/jenkins created
+
+for this we need to do role role-binding
+
+[root@MY-EKS ~]# vim role.yml
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+ name: app-role
+ namespace: webapps
+rules:
+- apiGroups:
+  - ""
+  - apps
+  - autoscaling
+  - batch
+  - extensions
+  - policy
+  - rbac.authorization.k8s.io
+  resources:
+  - pods
+  - componentstatuses
+  - configmaps
+  - daemonsets
+  - deployments
+  - events
+  - endpoints
+  - horizontalpodautoscalers
+  - ingress
+  - jobs
+  - limitranges
+  - namespaces
+  - nodes
+  - pods
+  - persistentvolumes
+  - persistentvolumeclaims
+  - resourcequotas
+  - replicasets
+  - replicationcontrollers
+  - serviceaccounts
+  - services
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+:wq
+
+
+[root@MY-EKS ~]# kubectl create -f role.yml  ------------------------------------>
+role.rbac.authorization.k8s.io/app-role created
+[root@MY-EKS ~]#
+
+Role has been created 
+
+Next is role binding
+
+[root@MY-EKS ~]# vim rolebinding.yml
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: app-rolebinding
+  namespace: webapps
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: app-role
+subjects:
+- namespace: webapps
+  kind: ServiceAccount
+  name: jenkins
+ 
+
+:wq
+
+[root@MY-EKS ~]# kubectl create -f rolebinding.yml 
+rolebinding.rbac.authorization.k8s.io/app-rolebinding created
+[root@MY-EKS ~]# 
+
+[root@MY-EKS ~]# kubectl get rolebindings
+No resources found in default namespace.
+[root@MY-EKS ~]# kubectl get rolebindings -n webapps
+NAME              ROLE            AGE
+app-rolebinding   Role/app-role   13m
+[root@MY-EKS ~]# 
+
+[root@MY-EKS ~]# kubectl get rolebindings --all-namespaces
+NAMESPACE     NAME                                                ROLE                                                  AGE
+kube-public   system:controller:bootstrap-signer                  Role/system:controller:bootstrap-signer               48m
+kube-system   eks-vpc-resource-controller-rolebinding             Role/eks-vpc-resource-controller-role                 48m
+kube-system   eks:addon-manager                                   Role/eks:addon-manager                                48m
+kube-system   eks:authenticator                                   Role/eks:authenticator                                48m
+kube-system   eks:az-poller                                       Role/eks:az-poller                                    48m
+kube-system   eks:coredns-autoscaler                              Role/eks:coredns-autoscaler                           48m
+kube-system   eks:fargate-manager                                 Role/eks:fargate-manager                              48m
+kube-system   eks:network-policy-controller                       Role/eks:network-policy-controller                    48m
+kube-system   eks:node-manager                                    Role/eks:node-manager                                 48m
+kube-system   eks:service-operations                              Role/eks:service-operations-configmaps                48m
+kube-system   metrics-server-auth-reader                          Role/extension-apiserver-authentication-reader        43m
+kube-system   system::extension-apiserver-authentication-reader   Role/extension-apiserver-authentication-reader        48m
+kube-system   system::leader-locking-kube-controller-manager      Role/system::leader-locking-kube-controller-manager   48m
+kube-system   system::leader-locking-kube-scheduler               Role/system::leader-locking-kube-scheduler            48m
+kube-system   system:controller:bootstrap-signer                  Role/system:controller:bootstrap-signer               48m
+kube-system   system:controller:cloud-provider                    Role/system:controller:cloud-provider                 48m
+kube-system   system:controller:token-cleaner                     Role/system:controller:token-cleaner                  48m
+webapps       app-rolebinding                                     Role/app-role                                         15m
+[root@MY-EKS ~]# 
+
+Now got permissions for jenkins
+
+Now we need to generate credentials that credentials need to be store in jenkins
+
+
+
+[root@MY-EKS ~]# vim secret.yml
+
+---
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/service-account-token
+metadata:
+  name: mysecretname
+  namespace: webapps
+  annotations:
+    kubernetes.io/service-account.name: jenkins
+
+:wq
+
+[root@MY-EKS ~]# kubectl create -f secret.yml 
+secret/mysecretname created
+
+[root@MY-EKS ~]# kubectl get secret -n webapps
+NAME           TYPE                                  DATA   AGE
+mysecretname   kubernetes.io/service-account-token   3      38s
+[root@MY-EKS ~]# kubectl describe secret mysecretname -n webapps
+Name:         mysecretname
+Namespace:    webapps
+Labels:       <none>
+Annotations:  kubernetes.io/service-account.name: jenkins
+              kubernetes.io/service-account.uid: 6d971dab-d4a9-4d5b-9fb3-895a40f2d211
+
+Type:  kubernetes.io/service-account-token
+
+Data
+====
+ca.crt:     1107 bytes
+namespace:  7 bytes
+token:      eyJhbGciOiJSUzI1NiIsImtpZCI6IkVkNHgzU1lvTVNLSnJMNUtvZlR0NG9hS2xUamlLM0hOSXhLaG51N0djZG8ifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJ3ZWJhcHBzIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6Im15c2VjcmV0bmFtZSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50Lm5hbWUiOiJqZW5raW5zIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiNmQ5NzFkYWItZDRhOS00ZDViLTlmYjMtODk1YTQwZjJkMjExIiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OndlYmFwcHM6amVua2lucyJ9.na21P5IT3Ozdso8dvn3R8VQQYLAhVOka1bv2frsZY9on-iH85H24krBHW-4-sZoc0Zi324KyauPCkPGZXRSvkWu_HNZHdhLD_3GaGV8xM52SDLVNgJY6qXIMiPJIVeOIYm0PG4T5WV07m_uc0aehyvUKsZGf-wAyz0M7uTirluE3ovdwSTI8gf4YjVzwSZFnUsFkBumavOkbWfAWxkkiRuhRUzwkVDYg53uxK3ZxG4M1lMIDK4Lx4FURft5882hSgKVO1w7xU0uo-0cj_4xzLEWuCnBniYo3EvgLmaSvEQv77d9WP_0TE_GfwVGejhZFwx3U1v-85lWLyaSE_WMGBw 
+
+we will get encrypted data like this above
+
+
+
+copy this above token and give in jenkins 
+
+eyJhbGciOiJSUzI1NiIsImtpZCI6IkVkNHgzU1lvTVNLSnJMNUtvZlR0NG9hS2xUamlLM0hOSXhLaG51N0djZG8ifQ.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJ3ZWJhcHBzIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZWNyZXQubmFtZSI6Im15c2VjcmV0bmFtZSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VydmljZS1hY2NvdW50Lm5hbWUiOiJqZW5raW5zIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQudWlkIjoiNmQ5NzFkYWItZDRhOS00ZDViLTlmYjMtODk1YTQwZjJkMjExIiwic3ViIjoic3lzdGVtOnNlcnZpY2VhY2NvdW50OndlYmFwcHM6amVua2lucyJ9.na21P5IT3Ozdso8dvn3R8VQQYLAhVOka1bv2frsZY9on-iH85H24krBHW-4-sZoc0Zi324KyauPCkPGZXRSvkWu_HNZHdhLD_3GaGV8xM52SDLVNgJY6qXIMiPJIVeOIYm0PG4T5WV07m_uc0aehyvUKsZGf-wAyz0M7uTirluE3ovdwSTI8gf4YjVzwSZFnUsFkBumavOkbWfAWxkkiRuhRUzwkVDYg53uxK3ZxG4M1lMIDK4Lx4FURft5882hSgKVO1w7xU0uo-0cj_4xzLEWuCnBniYo3EvgLmaSvEQv77d9WP_0TE_GfwVGejhZFwx3U1v-85lWLyaSE_WMGBw
+
+go to manage jenkins -----------> select credentials---------> create new credentials ----------> kind: secret text--------> paste this above token in here secret place
+-----------> in Id:docker-cred ---------> in description: k8-token jenkins credentials----------> ok
+
+k8-token
+k8-token jenkins credentials
+
+we need to modify jenkins file in GitHub-----> main branch-------> jenkinsfile --------> edit here like below
+
+go to jenkinsfile in main branch github and do changes like below
+
+injenkins file serverurl: https://1159534B71685DB881C3BF390D18E085.gr7.us-east-1.eks.amazonaws.com---------->
+
+whwre we get this url is in created EKS-1 Cluster there will be this url as API server endpoint https://1159534B71685DB881C3BF390D18E085.gr7.us-east-1.eks.amazonaws.com
+
+save and do commits
+
+Now create a Job mltijobpipeline in Jenkins----------> Display Name: eks-project------------> Branch Sources:add source:select Git:Project Repository:
+paste here url of GitHub(https://github.com/pranay-devops666/microservices-project.git) ----------> save 
+
+Now it wil do scan every branch in this Job from GitHub branches like below
+
+Scan Multibranch Pipeline Log
+
+Started by user pranay babu gorantla
+[Wed Mar 25 11:01:18 UTC 2026] Starting branch indexing...
+ > git --version # timeout=10
+ > git --version # 'git version 2.50.1'
+ > git ls-remote --symref -- https://github.com/pranay-devops666/microservices-project.git # timeout=10
+Creating git repository in /var/lib/jenkins/caches/git-347129cc1b2afa61f2acb4d0795e8f64
+ > git init /var/lib/jenkins/caches/git-347129cc1b2afa61f2acb4d0795e8f64 # timeout=10
+Setting origin to https://github.com/pranay-devops666/microservices-project.git
+ > git config remote.origin.url https://github.com/pranay-devops666/microservices-project.git # timeout=10
+Fetching & pruning origin...
+Listing remote references...
+ > git config --get remote.origin.url # timeout=10
+ > git --version # timeout=10
+ > git --version # 'git version 2.50.1'
+ > git ls-remote -h -- https://github.com/pranay-devops666/microservices-project.git # timeout=10
+Fetching upstream changes from origin
+ > git config --get remote.origin.url # timeout=10
+ > git fetch --no-tags --force --progress --prune -- origin +refs/heads/*:refs/remotes/origin/* # timeout=10
+Checking branches...
+  Checking branch cartservice
+      ‘Jenkinsfile’ found
+    Met criteria
+Scheduled build for branch: cartservice
+  Checking branch checkoutservice
+      ‘Jenkinsfile’ found
+    Met criteria
+Scheduled build for branch: checkoutservice
+  Checking branch shippingservice
+      ‘Jenkinsfile’ found
+    Met criteria
+Scheduled build for branch: shippingservice
+  Checking branch adservice
+      ‘Jenkinsfile’ found
+    Met criteria
+Scheduled build for branch: adservice
+  Checking branch frontend
+      ‘Jenkinsfile’ found
+    Met criteria
+Scheduled build for branch: frontend
+  Checking branch emailservice
+      ‘Jenkinsfile’ found
+    Met criteria
+Scheduled build for branch: emailservice
+  Checking branch productcatalogservice
+      ‘Jenkinsfile’ found
+    Met criteria
+Scheduled build for branch: productcatalogservice
+  Checking branch main
+      ‘Jenkinsfile’ found
+    Met criteria
+Scheduled build for branch: main
+  Checking branch recommendationservice
+      ‘Jenkinsfile’ found
+    Met criteria
+Scheduled build for branch: recommendationservice
+  Checking branch loadgenerator
+      ‘Jenkinsfile’ found
+    Met criteria
+Scheduled build for branch: loadgenerator
+  Checking branch Infra-Steps
+      ‘Jenkinsfile’ not found
+    Does not meet criteria
+  Checking branch currencyservice
+      ‘Jenkinsfile’ found
+    Met criteria
+Scheduled build for branch: currencyservice
+  Checking branch paymentservice
+      ‘Jenkinsfile’ found
+    Met criteria
+Scheduled build for branch: paymentservice
+Processed 13 branches
+[Wed Mar 25 11:01:19 UTC 2026] Finished branch indexing. Indexing took 0.78 sec
+Finished: SUCCESS
+
+
+all jobs build got failure
+
+will do troubleshoot steps below
+
+issue is permission denied
+
+[root@MY-EKS ~]# chmod 777 /var/run/docker.sock
+[root@MY-EKS ~]# 
+
+Delete the Jenkins multibranch pipelin job and do create again
+
+
+if bUild JObs got failed means kindly refer this below chatgpt url 
+
+https://chatgpt.com/c/69c3b61a-a584-8324-a9d7-11be00b0213d
+
+
+[root@MY-EKS ~]# kubectl get po -n webapps
+NAME                                     READY   STATUS    RESTARTS   AGE
+adservice-64b9fb9f4c-lkcxv               1/1     Running   0          62m
+cartservice-57cb79fb84-sslpl             1/1     Running   0          62m
+checkoutservice-8c9c76dd7-rtzr7          1/1     Running   0          62m
+currencyservice-74c95ccdc9-2dk89         1/1     Running   0          62m
+emailservice-74f99858b5-59l2z            1/1     Running   0          62m
+frontend-6677954857-nbgj6                1/1     Running   0          62m
+loadgenerator-559598d8d8-z2hq6           1/1     Running   0          62m
+paymentservice-55cf65c6c9-qc2fp          1/1     Running   0          62m
+productcatalogservice-7ddc6b97fc-54dp5   1/1     Running   0          62m
+recommendationservice-67866f7655-gl4dx   1/1     Running   0          62m
+redis-cart-5cc6c9f86c-brm4c              1/1     Running   0          62m
+shippingservice-dff56d7f5-nd97t          1/1     Running   0          62m
+[root@MY-EKS ~]# 
+
+[root@MY-EKS ~]# kubectl get deploy -n webapps
+NAME                    READY   UP-TO-DATE   AVAILABLE   AGE
+adservice               1/1     1            1           63m
+cartservice             1/1     1            1           63m
+checkoutservice         1/1     1            1           63m
+currencyservice         1/1     1            1           63m
+emailservice            1/1     1            1           63m
+frontend                1/1     1            1           63m
+loadgenerator           1/1     1            1           63m
+paymentservice          1/1     1            1           63m
+productcatalogservice   1/1     1            1           63m
+recommendationservice   1/1     1            1           63m
+redis-cart              1/1     1            1           63m
+shippingservice         1/1     1            1           63m
+[root@MY-EKS ~]# kubectl get svc -n webapps
+NAME                    TYPE           CLUSTER-IP       EXTERNAL-IP                                                              PORT(S)        AGE
+adservice               ClusterIP      10.100.42.23     <none>                                                                   9555/TCP       63m
+cartservice             ClusterIP      10.100.213.18    <none>                                                                   7070/TCP       63m
+checkoutservice         ClusterIP      10.100.165.60    <none>                                                                   5050/TCP       63m
+currencyservice         ClusterIP      10.100.253.141   <none>                                                                   7000/TCP       63m
+emailservice            ClusterIP      10.100.107.89    <none>                                                                   5000/TCP       63m
+frontend                NodePort       10.100.253.162   <none>                                                                   80:31060/TCP   63m
+frontend-external       LoadBalancer   10.100.75.233    aafdf28090f7e4d8c836dc0647d95784-985218976.us-east-1.elb.amazonaws.com   80:32669/TCP   63m
+paymentservice          ClusterIP      10.100.173.235   <none>                                                                   50051/TCP      63m
+productcatalogservice   ClusterIP      10.100.127.195   <none>                                                                   3550/TCP       63m
+recommendationservice   ClusterIP      10.100.49.58     <none>                                                                   8080/TCP       63m
+redis-cart              ClusterIP      10.100.74.175    <none>                                                                   6379/TCP       63m
+shippingservice         ClusterIP      10.100.2.213     <none>                                                                   50051/TCP      63m
+[root@MY-EKS ~]# 
+
+copy the DNS name and paste in new tab
+
+aafdf28090f7e4d8c836dc0647d95784-985218976.us-east-1.elb.amazonaws.com--------------> access the application
+
+successfully access the application and running successfully
+
+now need to delete the cluster without fail like below
+
+
+[root@MY-EKS ~]# eksctl get cluster -------------->
+NAME    REGION          EKSCTL CREATED
+EKS-1   us-east-1       True
+[root@MY-EKS ~]# export AWS_DEFAULT_REGION=us-east-1 -------------->
+[root@MY-EKS ~]# eksctl delete cluster --name EKS-1 --region us-east-1---------------->
+
+
+
+
+
+[root@MY-EKS ~]# history
+    1  hostnamectl set-hostname "MY-EKS"
+    2  exit
+    3  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    4  unzip awscliv2.zip
+    5  sudo ./aws/install
+    6  curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.35.2/2026-02-27/bin/linux/amd64/kubectl
+    7  ll
+    8  chmod +x kubectl 
+    9  ll
+   10  mv kubectl /usr/local/bin/
+   11  ll
+   12  kubectl version
+   13  # for ARM systems, set ARCH to: `arm64`, `armv6` or `armv7`
+   14  ARCH=amd64
+   15  PLATFORM=$(uname -s)_$ARCH
+   16  curl -sLO "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_$PLATFORM.tar.gz"
+   17  # (Optional) Verify checksum
+   18  curl -sL "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_checksums.txt" | grep $PLATFORM | sha256sum --check
+   19  tar -xzf eksctl_$PLATFORM.tar.gz -C /tmp && rm eksctl_$PLATFORM.tar.gz
+   20  sudo install -m 0755 /tmp/eksctl /usr/local/bin && rm /tmp/eksctl
+   21  eksctl version
+   22  aws --version
+   23  eksctl create cluster --name=EKS-1 --region=us-east-1 --zones=us-east-1a,us-east-1b --without-nodegroup
+   24  eksctl get cluster
+   25  export AWS_DEFAULT_REGION=us-east-1
+   26  eksctl get cluster
+   27  eksctl utils associate-iam-oidc-provider --region us-east-1 --cluster EKS-1 --approve
+   28  eksctl create nodegroup --cluster=EKS-1 --region=us-east-1 --name=node2 --node-type=c7i-flex.large --nodes=3 --nodes-min=2 --nodes-max=4 --node-volume-size=20 --ssh-access --ssh-public-key=Anjeneyakeypair --managed --asg-access --external-dns-access --full-ecr-access --appmesh-access --alb-ingress-access
+   29  kubectl get no
+   30  yum install java-17-amazon-corretto -y
+   31  sudo yum update –y
+   32  sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+[root@MY-EKS ~]# kubectl get deploy -n webapps
+[root@MY-EKS ~]# history
+    1  hostnamectl set-hostname "MY-EKS"
+    2  exit
+    3  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    4  unzip awscliv2.zip
+    5  sudo ./aws/install
+    6  curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.35.2/2026-02-27/bin/linux/amd64/kubectl
+    7  ll
+    8  chmod +x kubectl 
+    9  ll
+   10  mv kubectl /usr/local/bin/
+   11  ll
+   12  kubectl version
+   13  # for ARM systems, set ARCH to: `arm64`, `armv6` or `armv7`
+   14  ARCH=amd64
+   15  PLATFORM=$(uname -s)_$ARCH
+   16  curl -sLO "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_$PLATFORM.tar.gz"
+   17  # (Optional) Verify checksum
+   18  curl -sL "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_checksums.txt" | grep $PLATFORM | sha256sum --check
+   19  tar -xzf eksctl_$PLATFORM.tar.gz -C /tmp && rm eksctl_$PLATFORM.tar.gz
+   20  sudo install -m 0755 /tmp/eksctl /usr/local/bin && rm /tmp/eksctl
+   21  eksctl version
+   22  aws --version
+   23  eksctl create cluster --name=EKS-1 --region=us-east-1 --zones=us-east-1a,us-east-1b --without-nodegroup
+   24  eksctl get cluster
+   25  export AWS_DEFAULT_REGION=us-east-1
+   26  eksctl get cluster
+   27  eksctl utils associate-iam-oidc-provider --region us-east-1 --cluster EKS-1 --approve
+   28  eksctl create nodegroup --cluster=EKS-1 --region=us-east-1 --name=node2 --node-type=c7i-flex.large --nodes=3 --nodes-min=2 --nodes-max=4 --node-volume-size=20 --ssh-access --ssh-public-key=Anjeneyakeypair --managed --asg-access --external-dns-access --full-ecr-access --appmesh-access --alb-ingress-access
+   29  kubectl get no
+   30  yum install java-17-amazon-corretto -y
+   31  sudo yum update –y
+   32  sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+   33  sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+   34  sudo yum upgrade
+   35  sudo yum install java-17-amazon-corretto -y
+   36  sudo yum install jenkins git -y
+   37  sudo systemctl enable jenkins
+   38  sudo systemctl start jenkins
+   39  sudo systemctl status jenkins
+   40  cat /var/lib/jenkins/secrets/initialAdminPassword
+   41  docker run -itd --name sonar -p 9000:9000 sonarqube:lts-community
+   42  yum install docker -y && systemctl start docker
+   43  docker run -itd --name sonar -p 9000:9000 sonarqube:lts-community
+   44  kubectl create ns webapps
+   45  vim svc-account.yml
+   46  vim role.yml
+   47  kubectl create -f role.yml
+   48  vim rolebinding.yml
+   49  kubectl create -f rolebinding.yml
+   50  vim rolebinding.yml
+   51  ll
+   52  kubectl create -f svc-account.yml 
+   53  vim rolebinding.yml 
+   54  kubectl create -f rolebinding.yml
+   55  kubectl get rolebinding
+   56  ll
+   57  history
+   58  kubectl create -f rolebinding.yml
+   59  kubectl get rolebindings
+   60  kubectl get rolebindings -n webapps
+   61  kubectl get rolebindings --all-namespaces
+   62  vim secret.yml
+   63  kubectl create -f secret.yml 
+   64  kubectl get secret -n webapps
+   65  kubectl describe secret mysecretname webapps
+   66  kubectl describe secret mysecretname -n webapps
+   67  yum install git -y
+   68  yum install docker -y && systemctl start docker
+   69  chmod 777 /var/rundocker.sock
+   70  chmod 777 /var/run/docker.sock
+   71  kubectl get secret -n webapps
+   72  kubectl describe secret mysecretname -n webapps
+   73  kubectl get secret -n webapps
+   74  kubetcl get po -n webapps
+   75* 
+   76  kubectl get po -n webapps
+   77*  
+   78  kubectl get deploy -n webapps
+   79  kubectl get svc -n webapps
+   80  history
+
+
+
+
+
+
