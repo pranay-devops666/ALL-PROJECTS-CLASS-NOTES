@@ -1,6 +1,6 @@
 Docker Class -03
 
-TOPIC: whole class Dockerfile and its components
+TOPIC: Whole class Dockerfile and its components
 =====================================================
 
 Dockerfile COMPONENTS
@@ -811,7 +811,28 @@ Here LABEL, MAINTAINER & EXPOSE ----------> are used main purpose are to know th
 
 
 
+Dockerfile COMPONENTS
+========================
 
+ 
+
+It is used to create Images
+It contains set of instructions
+It contains some components
+ 
+
+FROM : used to declare the base imagesex: FROM python
+ex: FROM node
+ex: FROM ubuntu
+LABEL : used to add the description about image
+MAINTAINER : used to define the author details
+COPY : used to copy the files from local to container.
+ADD : used to copy the files from local to container and it will download the files from internet and send those files to container.
+ARG : used to pass the variables while we build the image - these vars will not be available inside the container, we can overwrite these values while we build the image
+ENV : used top pass the variables - these vars will be available inside the container, we can’t overwrite these values while we build the image
+WORKDIR : used to set a default path for our container
+RUN : used to execute the commands
+EXPOSE : used to expose the port number
 
 
 
