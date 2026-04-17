@@ -1,0 +1,245 @@
+Jenkins Class -09
+========================
+
+https://devops-cicd.hashnode.dev/the-power-of-the-master-slave-architecture
+
+
+TOPIC: JENKINS MASTER SLAVE & USER MANAGEMENT
+=====================================================
+
+Launch an Instance------. name:Jenkins------>kernel 6.1----------->c7i-flex-large---------> with keypair--------> jenkins security group-------> 20ebs ----> launch
+
+Launch and connect EC2-Instance
+
+do set-up jenkins dashboard like below
+
+sudo yum update –y
+sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+sudo yum upgrade
+sudo yum install java-17-amazon-corretto -y
+sudo yum install jenkins git -y
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+sudo systemctl status jenkins
+
+above all commands to set-up a Jenkins Dashboard
+
+Launch an Instance------. name:DEV-SERVER------>kernel 6.1----------->c7i-flex-large---------> with keypair--------> jenkins security group-------> 20ebs ----> launch
+
+Launch and connect EC2-Instance
+
+Now we need to attach DEV-SERVER to a JENKINS-SERVER
+
+if i want to execute jenkins pipeline in DEV-SERVER means first we need to attach/integrate/connect DEV-SERVER to an JENKINS-SERVER
+
+so lets connect it
+
+go to manage jenkins-------> select Nodes----> select new Node----> give name:newserver----> permanent agent----> ok
+
+executors helps us to execute the no.of pipelines at a time
+
+no.of executors:3------->Remote root directory:/home/ec2-user/pranay-------> Label:DEV----------->usage:only build jobs with label expressions matching this node----->
+-------> Launch method:Launch agent via SSH-------> HOst:private IP od DEV-SERVER(172.31.94.27)----> credentials:Add:select SSH username with private key----->ID:slave-server
+-------> description: slave server password-----> username:ec2-user---> private key:enter directly---->add:copy and paste key pair date here-------> 
+Host Key Verification Strategy:Non-verify verification strategy-------->save
+
+The node will get fail why because we didn't installed JAVA on DEV-SERVER
+now we nee dto install Java on DEV-SEREVER
+
+yum install java-17-amazon-corretto -y-----------> command to install java 17th version
+
+Go to jenkins dashboard------> create a new free-style job----->select git:copy & paste url here----->save & Build
+
+now this pipeline has runned on jenkins server only, But we need to run on DEV-SERVER
+
+select created job------> do configure:select option as restrict where the project can be run:label expression:dev---->save & build
+
+Job Build will get fail why because GIT is not installed on DEV-SERVER
+
+Install GIT on DEV-SERVER
+
+yum install git -y --------------> command to install git
+
+now the source code will occue in what we given path as /home/ec2-user/pranay/workspace/freestylejob
+
+[root@DEV-SERVER ~]# cd /home/ec2-user
+[root@DEV-SERVER ec2-user]# ll
+total 0
+drwx------. 4 ec2-user ec2-user 59 Feb 27 08:06 pranay
+[root@DEV-SERVER ec2-user]# cd pr
+-bash: cd: pr: No such file or directory
+[root@DEV-SERVER ec2-user]# cd pranay/
+[root@DEV-SERVER pranay]# ll
+total 1376
+drwxrwxr-x. 4 ec2-user ec2-user      34 Feb 27 07:53 remoting
+-rw-rw-r--. 1 ec2-user ec2-user 1407915 Feb 27 07:50 remoting.jar
+drwxrwxr-x. 3 ec2-user ec2-user      26 Feb 27 08:06 workspace
+[root@DEV-SERVER pranay]# cd wor
+-bash: cd: wor: No such file or directory
+[root@DEV-SERVER pranay]# cd workspace/
+[root@DEV-SERVER workspace]# ll
+total 0
+drwxrwxr-x. 4 ec2-user ec2-user 121 Feb 27 08:06 freestylejob
+[root@DEV-SERVER workspace]# cd freestylejob/
+[root@DEV-SERVER freestylejob]# ll
+total 20
+-rw-rw-r--. 1 ec2-user ec2-user  123 Feb 27 08:06 Dockerfile
+-rw-rw-r--. 1 ec2-user ec2-user 1625 Feb 27 08:06 pom.xml
+-rw-rw-r--. 1 ec2-user ec2-user  510 Feb 27 08:06 script.js
+drwxrwxr-x. 3 ec2-user ec2-user   18 Feb 27 08:06 src
+-rw-rw-r--. 1 ec2-user ec2-user 2097 Feb 27 08:06 styles.css
+-rw-rw-r--. 1 ec2-user ec2-user 2910 Feb 27 08:06 tomcat-users.xml
+[root@DEV-SERVER freestylejob]#
+
+Here the pom.xml file we need to Build
+
+go to job do configure--------> select Build Steps:Invoke  top-level Maven targers-------> name:Mymaven-----> goal: clean package------> save & Build
+
+
+[root@DEV-SERVER freestylejob]# ll
+total 20
+-rw-rw-r--. 1 ec2-user ec2-user  123 Feb 27 08:06 Dockerfile
+-rw-rw-r--. 1 ec2-user ec2-user 1625 Feb 27 08:06 pom.xml
+-rw-rw-r--. 1 ec2-user ec2-user  510 Feb 27 08:06 script.js
+drwxrwxr-x. 3 ec2-user ec2-user   18 Feb 27 08:06 src
+-rw-rw-r--. 1 ec2-user ec2-user 2097 Feb 27 08:06 styles.css
+drwxrwxr-x. 4 ec2-user ec2-user   70 Feb 27 08:10 target
+-rw-rw-r--. 1 ec2-user ec2-user 2910 Feb 27 08:06 tomcat-users.xml
+
+Now target folder has occured
+
+[root@DEV-SERVER freestylejob]# cd target/
+[root@DEV-SERVER target]# ll
+total 12
+drwxrwxr-x. 2 ec2-user ec2-user    28 Feb 27 08:10 maven-archiver
+drwxrwxr-x. 4 ec2-user ec2-user    89 Feb 27 08:10 myweb-8.7.1
+-rw-rw-r--. 1 ec2-user ec2-user 10152 Feb 27 08:10 myweb-8.7.1.war
+[root@DEV-SERVER target]#
+
+Now we need to deploy an myweb-8.7.1.war file on DEV-SERVER
+
+we need to deploy application on Dev-Server by using Tomcat server, Tomcat need to be installed on Dev-server  only
+
+Now we need to Deploy application DEV-SERVER like below
+
+vim tomcat.sh
+
+yum install java-17-amazon-corretto -y
+wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz
+tar -zxvf apache-tomcat-9.0.115.tar.gz
+sed -i '56  a\<role rolename="manager-gui"/>' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '57  a\<role rolename="manager-script"/>' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '58  a\<user username="tomcat" password="admin@123" roles="manager-gui, manager-script"/>' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '59  a\</tomcat-users>' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '56d' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '21d' apache-tomcat-9.0.115/webapps/manager/META-INF/context.xml
+sed -i '22d'  apache-tomcat-9.0.115/webapps/manager/META-INF/context.xml
+sh apache-tomcat-9.0.115/bin/startup.sh
+
+:wq
+
+sh tomcat.sh
+
+Tomcat has been started
+
+Tomcat started.
+[root@ip-172-31-84-60 ~]#
+
+we need a plugin to install an application in jenkins
+
+Go to jenkins Dashboard--------> go to manage jenkins---------> select available plugins------> search as Deploy to Container and install it
+
+Do configure the job--------> select post-build actions-------> select deploy war/ear to container-------->target/*.war------> context:mynewapp------->
+add containers: Tomcat:9th version----------> add tomcat credentials-----> save & Build
+
+Application deployed successfully
+
+
+As 0f now we done on Freestyle Job
+Now we will do on pipeline job as well
+
+go to jenkins dashboard---------> select create a new job------> select pipeline -------> create -----> ok
+
+pipeline {
+    agent {
+        node {
+            label 'dev'
+        }
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/pranay-devops666/one.git'
+            }
+        }
+    }
+}
+
+save & Build
+
+Job Build got sucess
+
+
+
+
+pipeline {
+    agent {
+        node {
+            label 'dev'
+        }
+    }
+    tools {
+        maven 'mymaven'
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/pranay-devops666/one.git'
+            }
+        }
+        stage ("Build") {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+    }
+}
+
+
+save & Build
+
+Job Build got sucess
+
+
+TASK IS HERE
+===============
+
+------> first take 3 server 1. jenkins(master) 2.dev(slave-1) & 3. Test(slave-2)
+------> give master & slave connection to them both
+------> now  create 2 pipelines 1. freestyle 2. pipeline
+------> 1st pipeline to run on dev server in this stages are CODE, BUILD, TEST & DEPLOY
+------>In dev server install git, tomcat, java-17 
+------> integrate webhooks for this dever srever and the pipeline should be run on dev-srever
+
+------> create another pipeline in this stages are CODE, BUILD, TEST, ARTIFACT & DEPLOY as well no need of webhooks here
+------> for Artifacts Nexus need another seperate server take for it also and install Artifact NEXUS
+
+Now Important Concept is USER MANAGEMENT
+==========================================
+
+If we want to create one user means --------> go to manage jenkins--------> select users ------> create user-------> giver username & password ----> ok
+
+Now here we created user only
+
+go to manage jenkins--------> select security option--------> select Authorization:Project-based Matrix Authorization Strategy------> select Ad user: Jai ----->
+give all permissions as Admin------> add another user : give read only access
+
+
+
+
+
+
+
+
+
