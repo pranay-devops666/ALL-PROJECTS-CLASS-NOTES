@@ -1,0 +1,817 @@
+Docker Class -03
+
+TOPIC: whole class Dockerfile and its components
+=====================================================
+
+Dockerfile COMPONENTS
+==========================
+
+
+blog link : https://docker77.hashnode.dev/mastering-dockerfiles-your-ultimate-guide-to-container-image-creation
+
+Containers have revolutionized the way we build, ship, and deploy applications. At the heart of containers lies the Dockerfile, 
+a simple yet powerful script that defines how a container image is built. In this guide, we’ll dive into Dockerfiles with real-world examples 
+and explain concepts in straightforward terms. Let’s get started!
+
+What Is a Dockerfile?
+===========================
+A Dockerfile is a text based file with a set of instructions. Each instruction in the Dockerfile adds a layer to the image.
+It is used to automate the creating of docker images.
+
+
+Docker file--------> if we Build the dockerfile---------> Image will be created ----------> if we run the created image containers will be created-------->
+--------->if we run the created contaiers application will be run
+
+
+COMPONENTS OF DOCKER FILE:
+===============================
+
+FROM : used to define the base images [ Ex: Ubuntu, Nginx, Tomcat, Mysql, Python]
+======
+
+COPY : Used to copy the files from Host to Container.
+=====
+
+ADD : Used to copy the files from Host to Container and also it will download the files from IE and send those files to containers.
+======
+
+WORKDIR : used to set a default path in container [ WORKDIR /DEVOPS/APP]
+==========
+
+RUN : Used to execute the commands while we creating the image
+======
+
+CMD : Used to execute the commands while we creating the container
+=====
+
+ENTRYPOINT : Used to execute the commands while we creating the container
+===========
+
+ARG : Used to pass the variables, these variables we cant access inside the containers
+=======
+
+ENV : Used to pass the variables, these variables we can access inside the containers
+=====
+
+USER : Used to run the commands trhough the separate user.
+=========
+
+EXPOSE : Used to publish the port number.
+==========
+
+LABEL : Used to define the description of the image
+==========
+
+MAINTAINER : Used to provide author details of Dockerfile
+==============
+
+
+
+It is used to create Images
+It contains set of instructions
+It contains some components
+ 
+
+FROM : used to declare the base imagesex: FROM python
+ex: FROM node
+ex: FROM ubuntu
+LABEL : used to add the description about image
+MAINTAINER : used to define the author details
+COPY : used to copy the files from local to container.
+ADD : used to copy the files from local to container and it will download the files from internet and send those files to container.
+ARG : used to pass the variables while we build the image - these vars will not be available inside the container, we can overwrite these values while we build the image
+ENV : used top pass the variables - these vars will be available inside the container, we can’t overwrite these values while we build the image
+WORKDIR : used to set a default path for our container
+RUN : used to execute the commands
+EXPOSE : used to expose the port number
+
+1. FROM
+==========
+Description: Specifies the base image for building the Docker image. The base image can be any official image from Docker Hub or a custom image.
+
+Example:
+
+FROM ubuntu:20.04
+
+This sets the base image to Ubuntu 20.04. All subsequent instructions in the Dockerfile will build upon this image.
+
+2. COPY
+=========
+Description: Copies files from the host machine to the container. This is useful for transferring application code, configuration files, or scripts.
+
+Example:
+
+COPY index.html .
+
+This copies the index.html file from the host machine to the current directory in the container.
+
+3. ADD
+==========
+Description: Similar to COPY, but also supports:
+
+1.Extracting tar files.
+
+2.Downloading files from a URL and adding them directly to the container.
+Example:
+
+ADD app.tar.gz /app/
+ADD https://example.com/config.json /app/config.json
+
+The app.tar.gz file will be extracted into /app/, and config.json will be downloaded and placed in the /app/ directory.
+
+4. WORKDIR
+============
+Description: Sets the working directory inside the container. All subsequent commands like RUN, CMD, or ENTRYPOINT will execute from this directory.
+
+Example:
+
+WORKDIR /usr/src/app
+
+Sets /usr/src/app as the default directory for commands. For example, RUN touch mustafa will execute in /usr/src/app.
+
+5. RUN
+==========
+Description: Executes commands while creating the image (e.g., installing dependencies or updating the system).
+
+Example:
+
+RUN apt update -y && apt install -y python3
+
+Updates the package list and installs Python3 in the image.
+
+6. CMD
+=======
+Description: Specifies the default command to run when the container starts. It is overridden if commands are passed during docker run.
+Example:
+
+CMD ["nginx", "-g", "daemon off;"]
+
+Starts the NGINX server when the container runs.
+
+7. ENTRYPOINT
+===============
+Description: Similar to CMD, but it’s not overridden by commands passed during docker run. It’s used to set a fixed main process.
+
+Example:
+
+ENTRYPOINT ["python3", "app.py"]
+
+Always runs the app.py script using Python3 when the container starts.
+
+8. ARG
+===========
+Description: Defines build-time variables. These variables cannot be accessed inside the running container.
+
+Example:
+  ARG VERSION=1.0
+  RUN echo "Version: $VERSION"
+
+VERSION is used during the build process, but it won’t be available in the running container.
+
+9. ENV
+==========
+Description: Sets environment variables accessible inside the container.
+
+Example:
+  ENV APP_ENV=production
+
+Inside the container, the APP_ENV variable will be set to production.
+
+10. USER
+=========
+Description: Specifies the user under which the container processes will run.
+
+Example:
+  USER 1001
+The container processes will run as user ID 1001.
+
+11. EXPOSE
+================
+Description: Informs Docker that the container will listen on a specific port. This doesn’t publish the port automatically; 
+it’s a declaration for documentation and tooling.
+
+Example:
+
+  EXPOSE 80
+
+Declares that the container will use port 80.
+
+12. LABEL
+============
+Description: Adds metadata to the image, such as descriptions, versioning, or maintainer information.
+
+Example:
+
+  LABEL maintainer="devops@example.com" description="A sample NGINX image"
+
+Adds labels maintainer and description to the image metadata.
+
+13. MAINTAINER
+==================
+Description: Specifies the author or maintainer of the image. Replaced by the LABEL instruction.
+
+Example:
+
+  MAINTAINER devops@example.com
+
+Declares the maintainer’s email.
+
+
+Real-Time Scenario
+=========================
+Here’s an example of a Dockerfile for a Python web application:
+
+FROM python:3.9-slim
+LABEL maintainer="shaikmustafa@example.com" description="A simple Flask app"
+WORKDIR /app
+COPY requirements.txt /app/
+RUN pip install -r requirements.txt
+COPY . /app/
+EXPOSE 5000
+ENV FLASK_ENV=production
+CMD ["python", "app.py"]
+
+This Dockerfile:
+
+Uses a Python base image.
+
+Sets /app as the working directory.
+
+Installs dependencies from requirements.txt.
+
+Copies the app code to the container.
+
+Exposes port 5000 for the Flask application.
+
+Sets an environment variable FLASK_ENV.
+
+Defines app.py as the entry point for running the container.
+
+Conclusion
+==============
+Dockerfile is a powerful tool for automating the creation of container images. Each instruction has a specific purpose, 
+like defining the base image (FROM), copying files (COPY, ADD), running commands (RUN, CMD, ENTRYPOINT), and managing environment variables (ARG, ENV). 
+By combining these instructions effectively, you can build lightweight, consistent, and portable containers tailored for your applications. 
+Understanding these components is essential for DevOps engineers to streamline application deployment and management.
+
+
+Vim Dockerfile ------------> command to create a dockerfile
+
+FROM ubuntu
+LABEL this is my first image----------> this is description
+MAINTAINER name pranay--------> author name details
+COPY app.java /opt/---------> copying the file from source to destination
+
+:wq--------> command to save & quit
+
+
+dokcer build -t myimage:v1 . ------------> command to build Dockerfile here myimage:v1(myimage means imagename and :v2 means version v2)
+
+following output below
+============================
+
+[root@DOCKER ~]# docker build -t myimage:v1 .
+[+] Building 1.8s (7/7) FINISHED                                                                                                                        docker:default
+ => [internal] load build definition from Dockerfile                                                                                                              0.0s
+ => => transferring dockerfile: 181B                                                                                                                              0.0s
+ => [internal] load metadata for docker.io/library/ubuntu:latest                                                                                                  0.3s
+ => [internal] load .dockerignore                                                                                                                                 0.0s
+ => => transferring context: 2B                                                                                                                                   0.0s
+ => [internal] load build context                                                                                                                                 0.0s
+ => => transferring context: 220B                                                                                                                                 0.0s
+ => [1/2] FROM docker.io/library/ubuntu:latest@sha256:d1e2e92c075e5ca139d51a140fff46f84315c0fdce203eab2807c7e495eff4f9                                            1.2s
+ => => resolve docker.io/library/ubuntu:latest@sha256:d1e2e92c075e5ca139d51a140fff46f84315c0fdce203eab2807c7e495eff4f9                                            0.0s
+ => => sha256:bbdabce66f1b7dde0c081a6b4536d837cd81dd322dd8c99edd68860baf3b2db3 2.29kB / 2.29kB                                                                    0.0s
+ => => sha256:01d7766a2e4a62b74e0bebf2cd12c47e675e9221174f6570854203e84ffe68b0 29.73MB / 29.73MB                                                                  0.4s
+ => => sha256:d1e2e92c075e5ca139d51a140fff46f84315c0fdce203eab2807c7e495eff4f9 6.69kB / 6.69kB                                                                    0.0s
+ => => sha256:98ff7968124952e719a8a69bb3cccdd217f5fe758108ac4f21ad22e1df44d237 424B / 424B                                                                        0.0s
+ => => extracting sha256:01d7766a2e4a62b74e0bebf2cd12c47e675e9221174f6570854203e84ffe68b0                                                                         0.7s
+ => [2/2] COPY app.java /opt/                                                                                                                                     0.2s
+ => exporting to image                                                                                                                                            0.0s
+ => => exporting layers                                                                                                                                           0.0s
+ => => writing image sha256:74e26a32389a378dfad121bed9f94b3f9b243a9a0ec7ba624d957d2cbc0d403a                                                                      0.0s
+ => => naming to docker.io/library/myimage:v1 
+
+
+[root@DOCKER ~]# docker images --------------------> command to view list of images
+REPOSITORY   TAG       IMAGE ID       CREATED          SIZE
+myimage      v1        74e26a32389a   59 seconds ago   78.1MB
+
+[root@DOCKER ~]# docker run -itd --name mycontainer myimage:v1---------------> command to create container with base image name myimage:v1
+eff58f73441b15a2829995349cc579f45a7e875ccd5681d9cc8b124f60e94221
+[root@DOCKER ~]# docker ps -------------> command to view list of images
+CONTAINER ID   IMAGE        COMMAND       CREATED         STATUS         PORTS     NAMES
+eff58f73441b   myimage:v1   "/bin/bash"   4 seconds ago   Up 4 seconds             mycontainer
+[root@DOCKER ~]# 
+
+[root@DOCKER ~]# docker exec -it mycontainer /bin/bash ---------------> command to enter into inside a container
+root@eff58f73441b:/#
+
+root@eff58f73441b:/# ll /opt/
+total 4
+drwxr-xr-x. 1 root root  22 Mar  6 07:28 ./
+drwxr-xr-x. 1 root root   6 Mar  6 07:39 ../
+-rw-r--r--. 1 root root 125 Mar  6 07:28 app.java ---------> successfully copied the file from root user to /opt/ inside a container
+root@eff58f73441b:/# 
+
+successfully copied the file from root user to /opt/ inside a container
+
+Here,
+We can't see the data inside a Image---------> Image purpose is to read only purpose
+If we want to see the data inside the Image means ---------> we need to create a container through the image and we can able to see the data in the container
+
+root@eff58f73441b:/# read escape sequence --------------> here we will use ctrl+p+q key to exit the container and if we came exit of the container also that conatiner still in up state
+[root@DOCKER ~]# 
+
+Now i want to all files into a container through Dockerfile by using ADD component like below
+
+vim Dockerfile
+
+FROM ubuntu
+LABEL this is my first image
+MAINTAINER name pranay
+ADD . . -----------------> here first dot .  means local current directory and second dot .  means container directory 
+                                          (this means copying the current directory files into a container current directory files)
+
+:wq
+
+[root@DOCKER ~]# docker build -t myimage:v2 . -----------------> command to build an Dockerfile through image
+[+] Building 0.2s (7/7) FINISHED                                                                                                                        docker:default
+ => [internal] load build definition from Dockerfile                                                                                                              0.0s
+ => => transferring dockerfile: 169B                                                                                                                              0.0s
+ => [internal] load metadata for docker.io/library/ubuntu:latest                                                                                                  0.1s
+ => [internal] load .dockerignore                                                                                                                                 0.0s
+ => => transferring context: 2B                                                                                                                                   0.0s
+ => [internal] load build context                                                                                                                                 0.0s
+ => => transferring context: 6.55kB                                                                                                                               0.0s
+ => CACHED [1/2] FROM docker.io/library/ubuntu:latest@sha256:d1e2e92c075e5ca139d51a140fff46f84315c0fdce203eab2807c7e495eff4f9                                     0.0s
+ => [2/2] ADD . .                                                                                                                                                 0.0s
+ => exporting to image                                                                                                                                            0.0s
+ => => exporting layers                                                                                                                                           0.0s
+ => => writing image sha256:6e8ccd7e38b6d373bcda990188754a8068010c062814b9415e24d425e7f506f6                                                                      0.0s
+ => => naming to docker.io/library/myimage:v2                                                                                                                     0.0s
+[root@DOCKER ~]# 
+
+[root@DOCKER ~]# docker images -------------> command to see list of Images
+REPOSITORY   TAG       IMAGE ID       CREATED          SIZE
+myimage      v2        6e8ccd7e38b6   42 seconds ago   78.1MB
+myimage      v1        74e26a32389a   24 minutes ago   78.1MB
+
+[root@DOCKER ~]# docker run -itd --name cont2 myimage:v2
+5525a18b6266c504c4cc580dab08880158f7edaa3e81bdcbe3aee5d3577932cc
+[root@DOCKER ~]# docker ps 
+CONTAINER ID   IMAGE        COMMAND       CREATED          STATUS          PORTS     NAMES
+5525a18b6266   myimage:v2   "/bin/bash"   10 seconds ago   Up 10 seconds             cont2
+eff58f73441b   myimage:v1   "/bin/bash"   14 minutes ago   Up 14 minutes             mycontainer
+[root@DOCKER ~]# docker ps -a
+CONTAINER ID   IMAGE        COMMAND       CREATED          STATUS                      PORTS     NAMES
+5525a18b6266   myimage:v2   "/bin/bash"   14 seconds ago   Up 13 seconds                         cont2
+eff58f73441b   myimage:v1   "/bin/bash"   14 minutes ago   Up 14 minutes                         mycontainer
+6c1008c4334f   myimage:v1   "/bin/bash"   20 minutes ago   Exited (0) 16 minutes ago             cont1
+[root@DOCKER ~]# docker exec -it cont2 bash
+root@5525a18b6266:/# ls
+root@5525a18b6266:/# ls
+Dockerfile  app.java  bin  boot  dev  etc  file1  file2  file3  file4  file5  home  lib  lib64  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var
+root@5525a18b6266:/#
+
+How the COPY Component will work as the same process ADD Component will be work But, the difference is it will download the files from Internet
+
+vim Dockerfile
+
+FROM ubuntu
+LABEL this is my first image
+MAINTAINER name pranay
+ADD https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz /etc/ -----------> it will do copy the file from Internet and paste 
+                                                                                                            in /etc/ in a container
+
+:wq
+
+[root@DOCKER ~]# docker build -t myimage:v3 .
+[+] Building 0.5s (7/7) FINISHED                                                                                                                        docker:default
+ => [internal] load build definition from Dockerfile                                                                                                              0.0s
+ => => transferring dockerfile: 256B                                                                                                                              0.0s
+ => [internal] load metadata for docker.io/library/ubuntu:latest                                                                                                  0.2s
+ => [internal] load .dockerignore                                                                                                                                 0.0s
+ => => transferring context: 2B                                                                                                                                   0.0s
+ => https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz                                                                            0.1s
+ => CACHED [1/2] FROM docker.io/library/ubuntu:latest@sha256:d1e2e92c075e5ca139d51a140fff46f84315c0fdce203eab2807c7e495eff4f9                                     0.0s
+ => [2/2] ADD https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz /etc/                                                            0.1s
+ => exporting to image                                                                                                                                            0.0s
+ => => exporting layers                                                                                                                                           0.0s
+ => => writing image sha256:7e935754d89a43b0348e92b77f610a33e2ca3805c8306a19de93ed897cf57196                                                                      0.0s
+ => => naming to docker.io/library/myimage:v3                                                                                                                     0.0s
+[root@DOCKER ~]# docker images
+REPOSITORY   TAG       IMAGE ID       CREATED          SIZE
+myimage      v3        7e935754d89a   5 seconds ago    91.2MB
+myimage      v2        6e8ccd7e38b6   7 minutes ago    78.1MB
+myimage      v1        74e26a32389a   31 minutes ago   78.1MB
+[root@DOCKER ~]# docker run -itd --name cont3 myimage:v3
+5f86641a492e8647d8c96e2d6ac912582ae88b72cf45d473a1f3fa14ed6b06b1
+[root@DOCKER ~]# docker ps 
+CONTAINER ID   IMAGE        COMMAND       CREATED          STATUS          PORTS     NAMES
+5f86641a492e   myimage:v3   "/bin/bash"   5 seconds ago    Up 4 seconds              cont3
+5525a18b6266   myimage:v2   "/bin/bash"   6 minutes ago    Up 6 minutes              cont2
+eff58f73441b   myimage:v1   "/bin/bash"   21 minutes ago   Up 21 minutes             mycontainer
+[root@DOCKER ~]# docker ps -a
+CONTAINER ID   IMAGE        COMMAND       CREATED          STATUS                      PORTS     NAMES
+5f86641a492e   myimage:v3   "/bin/bash"   7 seconds ago    Up 6 seconds                          cont3
+5525a18b6266   myimage:v2   "/bin/bash"   6 minutes ago    Up 6 minutes                          cont2
+eff58f73441b   myimage:v1   "/bin/bash"   21 minutes ago   Up 21 minutes                         mycontainer
+6c1008c4334f   myimage:v1   "/bin/bash"   27 minutes ago   Exited (0) 23 minutes ago             cont1
+[root@DOCKER ~]# docker exec -it cont3 bash
+root@5f86641a492e:/# cd /etc/
+root@5f86641a492e:/etc# ls
+alternatives                  cron.daily      fstab     host.conf  ld.so.cache    lsb-release    os-release  rc0.d  rcS.d        shells       sysctl.d
+apache-tomcat-9.0.115.tar.gz  debconf.conf    gai.conf  hostname   ld.so.conf     machine-id     pam.conf    rc1.d  resolv.conf  skel         systemd
+apt                           debian_version  gnutls    hosts      ld.so.conf.d   mke2fs.conf    pam.d       rc2.d  rmt          subgid       terminfo
+bash.bashrc                   default         group     init.d     legal          mtab           passwd      rc3.d  security     subgid-      update-motd.d
+bindresvport.blacklist        dpkg            group-    issue      libaudit.conf  networks       passwd-     rc4.d  selinux      subuid       xattr.conf
+cloud                         e2scrub.conf    gshadow   issue.net  login.defs     nsswitch.conf  profile     rc5.d  shadow       subuid-
+cron.d                        environment     gshadow-  kernel     logrotate.d    opt            profile.d   rc6.d  shadow-      sysctl.conf
+root@5f86641a492e:/etc# 
+root@5f86641a492e:/etc# read escape sequence ---------------> use keyher ctrl+p+q to exit inside a container
+[root@DOCKER ~]# 
+
+Now we will try with COPY Command
+====================================
+
+vim Dockerfile
+
+FROM ubuntu
+LABEL this is my first image
+MAINTAINER name pranay
+COPY https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz /etc/
+
+:wq
+
+If we do build this COPY Component for the Internet url we will get an error like below
+
+[root@DOCKER ~]# docker build -t myimage:v4 .
+[+] Building 0.2s (2/2) FINISHED                                                                                                                        docker:default
+ => [internal] load build definition from Dockerfile                                                                                                              0.0s
+ => => transferring dockerfile: 257B                                                                                                                              0.0s
+ => [internal] load metadata for docker.io/library/ubuntu:latest                                                                                                  0.1s
+Dockerfile:4
+--------------------
+   2 |     LABEL this is my first image
+   3 |     MAINTAINER name pranay
+   4 | >>> COPY https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz /etc/
+   5 |     
+--------------------
+ERROR: failed to solve: source can't be a URL for COPY
+
+THE DIFFERENCE BETWEEN COPY AND ADD COMPONENTS ARE 
+======================================================
+
+COPY COMPNENT WILL WORK ONLY TO COPY FILES FROM LOCAL EC2-INSTANCE TO INSIDE OF A CONTAINER
+ADD COMPNENT WILL WORK ONLY TO GET THE FILES FROM INTERNET
+
+THE NEXT COMPONET IS ARG & ENV
+==================================
+
+ARG ------------> Used to pass the variables
+ENV ------------> Used to pass the variables
+
+THE DIFFERENCE BETWEEN ARG AND ENV COMPONENTS ARE 
+======================================================
+
+ARG-----------> What the values we are passing in this ARG it will be present while we build the Image---------> these variables doesn't exist inside of a container
+ENV ----------> Used to pass the variables ---------> these variables will be available inside the container
+
+Why we need to be pass this variables means For example
+===========================================================
+
+my databse password should to be send to daatabase server how we sent means is in such cases we will use ENV
+
+vim Dockerfile
+
+FROM ubuntu
+LABEL this is my first image
+MAINTAINER name pranay
+ADD https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz /etc/
+ARG course=devops ------------> passed the variables by using ARG component
+ENV cloud=aws ------------> passed the variables by using ENV component
+
+:wq
+
+[root@DOCKER ~]# docker build -t myimage:v5 .
+[+] Building 0.2s (7/7) FINISHED                                                                                                                        docker:default
+ => [internal] load build definition from Dockerfile                                                                                                              0.0s
+ => => transferring dockerfile: 288B                                                                                                                              0.0s
+ => [internal] load metadata for docker.io/library/ubuntu:latest                                                                                                  0.2s
+ => [internal] load .dockerignore                                                                                                                                 0.0s
+ => => transferring context: 2B                                                                                                                                   0.0s
+ => https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz                                                                            0.0s
+ => [1/2] FROM docker.io/library/ubuntu:latest@sha256:d1e2e92c075e5ca139d51a140fff46f84315c0fdce203eab2807c7e495eff4f9                                            0.0s
+ => CACHED [2/2] ADD https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz /etc/                                                     0.0s
+ => exporting to image                                                                                                                                            0.0s
+ => => exporting layers                                                                                                                                           0.0s
+ => => writing image sha256:ab55226cb5af456de1b5eab535258f5df08315f74c6263dbaa5bd8be78b2fc5d                                                                      0.0s
+ => => naming to docker.io/library/myimage:v5                                                                                                                     0.0s
+[root@DOCKER ~]#
+
+[root@DOCKER ~]# vim Dockerfile 
+[root@DOCKER ~]# docker build -t myimage:v5 .
+[+] Building 0.2s (7/7) FINISHED                                                                                                                        docker:default
+ => [internal] load build definition from Dockerfile                                                                                                              0.0s
+ => => transferring dockerfile: 288B                                                                                                                              0.0s
+ => [internal] load metadata for docker.io/library/ubuntu:latest                                                                                                  0.2s
+ => [internal] load .dockerignore                                                                                                                                 0.0s
+ => => transferring context: 2B                                                                                                                                   0.0s
+ => https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz                                                                            0.0s
+ => [1/2] FROM docker.io/library/ubuntu:latest@sha256:d1e2e92c075e5ca139d51a140fff46f84315c0fdce203eab2807c7e495eff4f9                                            0.0s
+ => CACHED [2/2] ADD https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz /etc/                                                     0.0s
+ => exporting to image                                                                                                                                            0.0s
+ => => exporting layers                                                                                                                                           0.0s
+ => => writing image sha256:ab55226cb5af456de1b5eab535258f5df08315f74c6263dbaa5bd8be78b2fc5d                                                                      0.0s
+ => => naming to docker.io/library/myimage:v5                                                                                                                     0.0s
+[root@DOCKER ~]# docker run -itd --name cont4 myimage:v5
+bbe50e3e6df6522be376319755c41d76e645c74f8bd4ec6e1b8c8643d19ed4bb
+[root@DOCKER ~]# docker exec -cont4 bash
+unknown shorthand flag: 'c' in -cont4
+See 'docker exec --help'.
+[root@DOCKER ~]# docker exec -it cont4 bash
+root@bbe50e3e6df6:/# 
+
+what is the command to print the environment variables are ----------> printenv
+
+root@bbe50e3e6df6:/# printenv
+cloud=aws
+HOSTNAME=bbe50e3e6df6
+PWD=/
+HOME=/root
+LS_COLORS=rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=00:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.avif=01;35:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.webp=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:*~=00;90:*#=00;90:*.bak=00;90:*.crdownload=00;90:*.dpkg-dist=00;90:*.dpkg-new=00;90:*.dpkg-old=00;90:*.dpkg-tmp=00;90:*.old=00;90:*.orig=00;90:*.part=00;90:*.rej=00;90:*.rpmnew=00;90:*.rpmorig=00;90:*.rpmsave=00;90:*.swp=00;90:*.tmp=00;90:*.ucf-dist=00;90:*.ucf-new=00;90:*.ucf-old=00;90:
+TERM=xterm
+SHLVL=1
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+_=/usr/bin/printenv
+
+Now if we observe cloud=aws is present but course=devops is not present
+
+That means we can able to access the variables from passing through ENV component only 
+we can't able to see the variables passing through the ARG inside a container
+
+one more fifference 
+In ARG----------> We can overwrite these values while we build the image but
+In ENV ---------> we can't overwrite these values while when we build the image
+
+lets do in practical way
+
+vim Dockerfile
+
+FROM ubuntu
+LABEL this is my first image
+MAINTAINER name pranay
+ADD https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz /etc/
+ARG course=devops
+ENV cloud=aws
+RUN echo "we are learing $course with $cloud"
+
+:wq
+
+[root@DOCKER ~]# vim Dockerfile 
+[root@DOCKER ~]# docker build -t myimage:v6 .
+[+] Building 0.4s (8/8) FINISHED                                                                                                                        docker:default
+ => [internal] load build definition from Dockerfile                                                                                                              0.0s
+ => => transferring dockerfile: 334B                                                                                                                              0.0s
+ => [internal] load metadata for docker.io/library/ubuntu:latest                                                                                                  0.1s
+ => [internal] load .dockerignore                                                                                                                                 0.0s
+ => => transferring context: 2B                                                                                                                                   0.0s
+ => https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz                                                                            0.0s
+ => [1/3] FROM docker.io/library/ubuntu:latest@sha256:d1e2e92c075e5ca139d51a140fff46f84315c0fdce203eab2807c7e495eff4f9                                            0.0s
+ => CACHED [2/3] ADD https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz /etc/                                                     0.0s
+ => [3/3] RUN echo "we are learing devops with aws"        -------------> output of arg componet                                                                                                          0.2s
+ => exporting to image                                                                                                                                            0.0s
+ => => exporting layers                                                                                                                                           0.0s
+ => => writing image sha256:af2d824f5fc2cb735f8c475696c39f63a40a89dd40cb619519b4adb0d33d16df                                                                      0.0s
+ => => naming to docker.io/library/myimage:v6                                                                                                                     0.0s
+[root@DOCKER ~]# 
+
+[root@DOCKER ~]# docker build -t myimage:v6 . --build-arg="course=python"
+[+] Building 0.4s (8/8) FINISHED                                                                                                                        docker:default
+ => [internal] load build definition from Dockerfile                                                                                                              0.0s
+ => => transferring dockerfile: 334B                                                                                                                              0.0s
+ => [internal] load metadata for docker.io/library/ubuntu:latest                                                                                                  0.1s
+ => [internal] load .dockerignore                                                                                                                                 0.0s
+ => => transferring context: 2B                                                                                                                                   0.0s
+ => https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz                                                                            0.0s
+ => [1/3] FROM docker.io/library/ubuntu:latest@sha256:d1e2e92c075e5ca139d51a140fff46f84315c0fdce203eab2807c7e495eff4f9                                            0.0s
+ => CACHED [2/3] ADD https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz /etc/                                                     0.0s
+ => [3/3] RUN echo "we are learing python with aws"   -------------> output of overwride with arg componet                                                                                                             0.2s
+ => exporting to image                                                                                                                                            0.0s
+ => => exporting layers                                                                                                                                           0.0s
+ => => writing image sha256:9be54b1373c16ef28dfb8b0fe9d11b2b329a1c610f7e4dd100b2220e40437639                                                                      0.0s
+ => => naming to docker.io/library/myimage:v6                                                                                                                     0.0s
+[root@DOCKER ~]# 
+
+root@bbe50e3e6df6:/# read escape sequence
+[root@DOCKER ~]# 
+
+
+now lets try with ENV Component
+
+[root@DOCKER ~]# docker build -t myimage:v6 . --build-env="cloud=azure"
+unknown flag: --build-env
+See 'docker buildx build --help'.
+[root@DOCKER ~]# 
+
+ARG ---------> we can do overwrite the varaibles values while building an image and, cant access the variable values inside a container
+ENV ---------> we can't do overwrite the varibale values and, can able to access the variable values inside a container
+
+lets discuss WORKDIR Componet
+===============================
+
+WORKDIR --------------> used to create and Sets the working directory inside the container.
+simply it can be called as it will set the default path for our container
+
+
+vim Dockerfile
+
+FROM ubuntu
+LABEL this is my first image
+MAINTAINER name pranay
+ADD https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz /etc/
+ARG course=devops
+ENV cloud=aws
+RUN echo "we are learing $co
+
+:wq
+
+vim Dockerfile
+
+FROM ubuntu
+LABEL this is my first image
+MAINTAINER name pranay
+ADD https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz /etc/
+ARG course=devops
+ENV cloud=aws
+RUN echo "we are learing $course with $cloud"
+WORKDIR /pranay/babu/devops/
+
+:wq
+
+
+[root@DOCKER ~]# docker build -t myimage:v7 .
+[+] Building 1.1s (9/9) FINISHED                                                                                                                        docker:default
+ => [internal] load build definition from Dockerfile                                                                                                              0.0s
+ => => transferring dockerfile: 363B                                                                                                                              0.0s
+ => [internal] load metadata for docker.io/library/ubuntu:latest                                                                                                  0.1s
+ => [internal] load .dockerignore                                                                                                                                 0.0s
+ => => transferring context: 2B                                                                                                                                   0.0s
+ => https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz                                                                            0.8s
+ => [1/4] FROM docker.io/library/ubuntu:latest@sha256:d1e2e92c075e5ca139d51a140fff46f84315c0fdce203eab2807c7e495eff4f9                                            0.0s
+ => CACHED [2/4] ADD https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz /etc/                                                     0.0s
+ => CACHED [3/4] RUN echo "we are learing devops with aws"                                                                                                        0.0s
+ => [4/4] WORKDIR /pranay/babu/devops/                                                                                                                            0.0s
+ => exporting to image                                                                                                                                            0.0s
+ => => exporting layers                                                                                                                                           0.0s
+ => => writing image sha256:8a987a9c99c72a26d555d983ae12e682df1161df41253e7e39aff2b9bbb03adb                                                                      0.0s
+ => => naming to docker.io/library/myimage:v7                                                                                                                     0.0s
+[root@DOCKER ~]# 
+
+[root@DOCKER ~]# docker run -itd --name cont5 myimage:v7
+39b416048148f0cb521725b484d7fe7e02ff82fdb8ebe2c3cf2e316ee65baede
+[root@DOCKER ~]# docker exec cont5 bash
+[root@DOCKER ~]# docker exec -it cont5 bash
+root@39b416048148:/pranay/babu/devops#----------> successfully entered into a specified WORKDIR path
+
+vim Dockerfile
+
+FROM ubuntu
+LABEL this is my first image
+MAINTAINER name pranay
+ADD https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz /etc/
+WORKDIR /pranay/babu/devops/
+COPY . . 
+ARG course=devops
+ENV cloud=aws
+RUN echo "we are learing $course with $cloud"
+
+:wq
+
+[root@DOCKER ~]# docker build -t myimage:v8 .
+[+] Building 0.8s (11/11) FINISHED                                                                                                                      docker:default
+ => [internal] load build definition from Dockerfile                                                                                                              0.0s
+ => => transferring dockerfile: 373B                                                                                                                              0.0s
+ => [internal] load metadata for docker.io/library/ubuntu:latest                                                                                                  0.1s
+ => [internal] load .dockerignore                                                                                                                                 0.0s
+ => => transferring context: 2B                                                                                                                                   0.0s
+ => https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz                                                                            0.3s
+ => [internal] load build context                                                                                                                                 0.0s
+ => => transferring context: 12.06kB                                                                                                                              0.0s
+ => [1/5] FROM docker.io/library/ubuntu:latest@sha256:d1e2e92c075e5ca139d51a140fff46f84315c0fdce203eab2807c7e495eff4f9                                            0.0s
+ => CACHED [2/5] ADD https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz /etc/                                                     0.0s
+ => [3/5] WORKDIR /pranay/babu/devops/                                                                                                                            0.0s
+ => [4/5] COPY . .                                                                                                                                                0.0s
+ => [5/5] RUN echo "we are learing devops with aws"                                                                                                               0.2s
+ => exporting to image                                                                                                                                            0.0s
+ => => exporting layers                                                                                                                                           0.0s
+ => => writing image sha256:5b094cbd06f7eae6f6d3908c2f89d08c93312f4df17d4f56193460a83e254e7a                                                                      0.0s
+ => => naming to docker.io/library/myimage:v8                                                                                                                     0.0s
+[root@DOCKER ~]# 
+
+[root@DOCKER ~]# docker run -itd --name cont7 myimage:v8
+b93901fa249af568eb1e1fdbf5362bf9ec47e1ac27aebcd4ab0432a3b4be47b4
+[root@DOCKER ~]# docker exec -it cont7 bash
+root@b93901fa249a:/pranay/babu/devops# ls
+Dockerfile  app.java  file1  file2  file3  file4  file5
+root@b93901fa249a:/pranay/babu/devops#
+
+root@b93901fa249a:/pranay/babu/devops# ls /etc/
+alternatives                  cron.daily      fstab     host.conf  ld.so.cache    lsb-release    os-release  rc0.d  rcS.d        shells       sysctl.d
+apache-tomcat-9.0.115.tar.gz  debconf.conf    gai.conf  hostname   ld.so.conf     machine-id     pam.conf    rc1.d  resolv.conf  skel         systemd
+apt                           debian_version  gnutls    hosts      ld.so.conf.d   mke2fs.conf    pam.d       rc2.d  rmt          subgid       terminfo
+bash.bashrc                   default         group     init.d     legal          mtab           passwd      rc3.d  security     subgid-      update-motd.d
+bindresvport.blacklist        dpkg            group-    issue      libaudit.conf  networks       passwd-     rc4.d  selinux      subuid       xattr.conf
+cloud                         e2scrub.conf    gshadow   issue.net  login.defs     nsswitch.conf  profile     rc5.d  shadow       subuid-
+cron.d                        environment     gshadow-  kernel     logrotate.d    opt            profile.d   rc6.d  shadow-      sysctl.conf
+root@b93901fa249a:/pranay/babu/devops# 
+
+WORKDIR --------------> Used to set a defult path for our container
+
+
+Lets try RUN Component
+
+RUN ------------> The RUN Componet is used to execute the commands
+
+vim Dockerfile
+
+FROM ubuntu
+LABEL this is my first image
+MAINTAINER name pranay
+ADD https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz /etc/
+WORKDIR /pranay/babu/devops/
+COPY . .
+ARG course=devops
+ENV cloud=aws
+RUN echo "we are learing $course with $cloud"
+RUN touch app.py
+RUN mkdir python
+RUN apt update -y
+
+:wq
+
+[root@DOCKER ~]# docker build -t myimage:v9 .
+[+] Building 5.3s (14/14) FINISHED                                                                                                                      docker:default
+ => [internal] load build definition from Dockerfile                                                                                                              0.0s
+ => => transferring dockerfile: 425B                                                                                                                              0.0s
+ => [internal] load metadata for docker.io/library/ubuntu:latest                                                                                                  0.1s
+ => [internal] load .dockerignore                                                                                                                                 0.0s
+ => => transferring context: 2B                                                                                                                                   0.0s
+ => https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz                                                                            0.0s
+ => [internal] load build context                                                                                                                                 0.0s
+ => => transferring context: 11.90kB                                                                                                                              0.0s
+ => [1/8] FROM docker.io/library/ubuntu:latest@sha256:d1e2e92c075e5ca139d51a140fff46f84315c0fdce203eab2807c7e495eff4f9                                            0.0s
+ => CACHED [2/8] ADD https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz /etc/                                                     0.0s
+ => CACHED [3/8] WORKDIR /pranay/babu/devops/                                                                                                                     0.0s
+ => [4/8] COPY . .                                                                                                                                                0.0s
+ => [5/8] RUN echo "we are learing devops with aws"                                                                                                               0.3s
+ => [6/8] RUN touch app.py                                                                                                                                        0.3s
+ => [7/8] RUN mkdir python                                                                                                                                        0.3s
+ => [8/8] RUN apt update -y                                                                                                                                       4.0s
+ => exporting to image                                                                                                                                            0.1s 
+ => => exporting layers                                                                                                                                           0.1s 
+ => => writing image sha256:5aacecf85b3d90976e63726c3cdb31645ff47ec5317901395d039058d10145d6                                                                      0.0s 
+ => => naming to docker.io/library/myimage:v9                                                                                                                     0.0s 
+[root@DOCKER ~]# 
+
+[root@DOCKER ~]# docker run -itd --name cont8 myimage:v9
+d3d82f1e4d583d3888dc6421d345ab429c380ea97c8b0fa23b9c63e7e4ac74db                                                                                                       
+[root@DOCKER ~]# docker exec -it cont8 bash
+root@d3d82f1e4d58:/pranay/babu/devops# ls
+Dockerfile  app.java  app.py  file1  file2  file3  file4  file5  python
+root@d3d82f1e4d58:/pranay/babu/devops# 
+
+lets try EXPOSE Component
+
+COMPOSE --------------> this component is used to expose the port number
+
+vim Dockerfile
+
+FROM ubuntu
+LABEL this is my first image
+MAINTAINER name pranay
+ADD https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz /etc/
+WORKDIR /pranay/babu/devops/
+COPY . .
+ARG course=devops
+ENV cloud=aws
+RUN echo "we are learing $course with $cloud"
+RUN touch app.py
+RUN mkdir python
+RUN apt update -y
+EXPOSE 5000
+
+:wq
+
+Here LABEL, MAINTAINER & EXPOSE ----------> are used main purpose are to know the other opposite persons only for documentaion purpose
+
+
+
+
+
+
+
+
+
+
