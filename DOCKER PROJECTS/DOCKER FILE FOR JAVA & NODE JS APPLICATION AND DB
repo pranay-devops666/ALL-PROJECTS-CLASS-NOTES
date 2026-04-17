@@ -1,0 +1,430 @@
+Docker Class -05
+======================
+
+TOPIC: DOCKER FILE FOR JAVA & NODE JS APPLICATION AND DB
+============================================================
+
+Difference between CMD & ENTRYPOINT 
+======================================
+
+CMD -----------> It has a default value, it can be over written we can change the values while creating the container
+ENTRYPOINT ------> It has a main command it cannot be over written
+
+DOCKER FILE FOR JAVA & NODE JS APPLICATION AND DB
+
+
+firts we build the CODE using maven
+after build the code using maven 
+we will get war file
+if we want to deploy this war file we used TOMCAT
+
+
+steps to be followed to do DOCKER FILE FOR JAVA following below
+install git
+first go to github take java repository and clone in ec2-instance by command below
+[root@DOCKER ~]# git clone https://github.com/pranay-devops666/one.git
+Cloning into 'one'...
+remote: Enumerating objects: 1293, done.
+remote: Counting objects: 100% (2/2), done.
+remote: Compressing objects: 100% (2/2), done.
+remote: Total 1293 (delta 0), reused 0 (delta 0), pack-reused 1291 (from 2)
+Receiving objects: 100% (1293/1293), 278.53 KiB | 30.95 MiB/s, done.
+Resolving deltas: 100% (279/279), done.
+[root@DOCKER ~]# ll
+total 0
+drwxr-xr-x. 4 root root 87 Mar  9 05:11 one
+[root@DOCKER ~]# cd one/
+[root@DOCKER one]# ll
+total 12
+-rw-r--r--. 1 root root   5 Mar  9 05:11 README.md
+-rw-r--r--. 1 root root 219 Mar  9 05:11 dockerfile
+-rw-r--r--. 1 root root 109 Mar  9 05:11 index.html
+[root@DOCKER one]# git checkout master
+branch 'master' set up to track 'origin/master'.
+Switched to a new branch 'master'
+[root@DOCKER one]# git branch
+  main
+* master
+[root@DOCKER one]# ll
+total 20
+-rw-r--r--. 1 root root  123 Mar  9 05:12 Dockerfile
+-rw-r--r--. 1 root root 1625 Mar  9 05:12 pom.xml
+-rw-r--r--. 1 root root  510 Mar  9 05:12 script.js
+drwxr-xr-x. 3 root root   18 Mar  9 05:12 src
+-rw-r--r--. 1 root root 2097 Mar  9 05:12 styles.css
+-rw-r--r--. 1 root root 2910 Mar  9 05:12 tomcat-users.xml
+[root@DOCKER one]# yum install maven -y -------------------------> command to install maven 
+[root@DOCKER one]# mvn -v ------------------> command to know maven version
+Apache Maven 3.8.4 (Red Hat 3.8.4-3.amzn2023.0.5)
+Maven home: /usr/share/maven
+Java version: 17.0.18, vendor: Amazon.com Inc., runtime: /usr/lib/jvm/java-17-amazon-corretto.x86_64
+Default locale: en, platform encoding: UTF-8
+OS name: "linux", version: "6.1.163-186.299.amzn2023.x86_64", arch: "amd64", family: "unix"
+[root@DOCKER one]# mvn clean package -----------------> command to build the code by using maven
+
+BUILD SUCCESS
+
+[root@DOCKER one]# ll
+total 16
+-rw-r--r--. 1 root root 1625 Mar  9 05:12 pom.xml
+-rw-r--r--. 1 root root  510 Mar  9 05:12 script.js
+drwxr-xr-x. 3 root root   18 Mar  9 05:12 src
+-rw-r--r--. 1 root root 2097 Mar  9 05:12 styles.css
+drwxr-xr-x. 4 root root   70 Mar  9 05:16 target
+-rw-r--r--. 1 root root 2910 Mar  9 05:12 tomcat-users.xml
+[root@DOCKER one]# cd target/
+[root@DOCKER target]# ll
+total 12
+drwxr-xr-x. 2 root root    28 Mar  9 05:16 maven-archiver
+drwxr-xr-x. 4 root root    89 Mar  9 05:16 myweb-8.7.1
+-rw-r--r--. 1 root root 10152 Mar  9 05:16 myweb-8.7.1.war
+[root@DOCKER target]# 
+
+myweb-8.7.1.war -------------> war file got exist
+
+
+we need to deploy this war file in TOMCAT
+no need to take another instance for TOMCAT we have a official image for TOMCAT in dockerhub we can use it for writing Dockerfile for it
+
+vim Dockerfile -------------------> command to create Dockerfile
+
+FROM tomcat:8.0.20-jre8
+EXPOSE 8080
+COPY target/*.war /usr/local/tomcat/webapps/
+
+:wq
+
+
+in here /usr/local/tomcat(uptto tomcat is a official image of tomcat) webapps will be present by default
+
+[root@DOCKER one]# docker build -t java-app:v1 . ---------------------> command to build Dockerfile to get image
+[+] Building 8.6s (7/7) FINISHED                                                                                                                        docker:default
+ => [internal] load build definition from Dockerfile                                                                                                              0.0s
+ => => transferring dockerfile: 178B                                                                                                                              0.0s
+ => [internal] load metadata for docker.io/library/tomcat:8.0.20-jre8                                                                                             0.2s
+ => [internal] load .dockerignore                                                                                                                                 0.0s
+ => => transferring context: 2B                                                                                                                                   0.0s
+ => [internal] load build context                                                                                                                                 0.0s
+ => => transferring context: 10.35kB                                                                                                                              0.0s
+ => [1/2] FROM docker.io/library/tomcat:8.0.20-jre8@sha256:579e042fb31e6975062276489cbdb3d9c942661a1d489f122d29ce2249e2ed34                                       6.4s
+ => => resolve docker.io/library/tomcat:8.0.20-jre8@sha256:579e042fb31e6975062276489cbdb3d9c942661a1d489f122d29ce2249e2ed34                                       0.0s
+ => => extracting sha256:c06482b548c848d34b3c4928e20478fe7570a99365407bc67cc5bfbb66f66555                                                                         1.4s
+ => => sha256:c06482b548c848d34b3c4928e20478fe7570a99365407bc67cc5bfbb66f66555 51.42MB / 51.42MB                                                                  0.0s
+ => => sha256:954f07d4dc149116389e71c4d45859273acc72585d435a3363be3f22f377ce78 18.85MB / 18.85MB                                                                  0.0s
+ => => sha256:0bd71cf3b59f7e7bb7ebbc75c5a40bf701f9a9a075e630dfd5f8b18e78034967 277.36kB / 277.36kB                                                                0.0s
+ => => sha256:12d3f8630ecad063c12cd1ae17ee0f4524d7bb9ff875a29ef36c027e6583029b 120.31MB / 120.31MB                                                                0.0s
+ => => sha256:d6e16c3ae29a28a88f17e678548b5a7855a92c60644f2701b0f5cdd9fa5f554c 277.90kB / 277.90kB                                                                0.0s
+ => => sha256:66a4ea6d102d861a52a0721201b07447312fc0ba743382026ba3110a73f42657 95.91kB / 95.91kB                                                                  0.0s
+ => => sha256:2b6aeca0d35eaeba6792e24ec7ac37fbba71e1b5551572a1dd251c7230f371ef 9.28MB / 9.28MB                                                                    0.0s
+ => => extracting sha256:954f07d4dc149116389e71c4d45859273acc72585d435a3363be3f22f377ce78                                                                         0.3s
+ => => extracting sha256:0bd71cf3b59f7e7bb7ebbc75c5a40bf701f9a9a075e630dfd5f8b18e78034967                                                                         0.0s
+ => => extracting sha256:12d3f8630ecad063c12cd1ae17ee0f4524d7bb9ff875a29ef36c027e6583029b                                                                         1.7s
+ => => extracting sha256:d6e16c3ae29a28a88f17e678548b5a7855a92c60644f2701b0f5cdd9fa5f554c                                                                         0.0s
+ => => extracting sha256:66a4ea6d102d861a52a0721201b07447312fc0ba743382026ba3110a73f42657                                                                         0.0s
+ => => extracting sha256:2b6aeca0d35eaeba6792e24ec7ac37fbba71e1b5551572a1dd251c7230f371ef                                                                         0.1s
+ => [2/2] COPY target/*.war /usr/local/tomcat/webapps/                                                                                                            1.8s
+ => exporting to image                                                                                                                                            0.0s
+ => => exporting layers                                                                                                                                           0.0s
+ => => writing image sha256:0a2d681b142f15806fd6bcccde6b0268815aaf04d330cfecc292a4793f95feba                                                                      0.0s
+ => => naming to docker.io/library/java-app:v1                                                                                                                    0.0s
+[root@DOCKER one]# 
+
+
+[root@DOCKER one]# docker run -itd --name cont1 -p 1234:8080 java-app:v1   ----------> to create container by using image
+890d09a131af6d72ea265f90d020f484ff5ee418115b0b38d770b0227a7a14b3
+[root@DOCKER one]#
+
+
+access the application by giving ec2-instance publicIP:container number(1234)
+
+http://44.201.101.190:1234/ ---------------> TOMCAT application has been launched
+
+TOMCAT application has been launched
+but we didn't gave any credentials for TOMCAT in manager app
+here the steps to do
+
+we need to send this vim tomcat-users.xml file into a container by writing Dockerfile
+then the credintials will be done
+
+open vim Dockerfile
+
+vim Dockerfile 
+
+FROM tomcat:8.0.20-jre8
+EXPOSE 8080
+COPY tomcat-users.xml /usr/local/tomcat/conf/
+COPY target/*.war /usr/local/tomcat/webapps/
+
+:wq
+
+
+[root@DOCKER one]# docker build -t java-app:v2 . --------------------> command to build Dockerfile to get image
+[+] Building 0.4s (8/8) FINISHED                                                                                                                        docker:default
+ => [internal] load build definition from Dockerfile                                                                                                              0.0s
+ => => transferring dockerfile: 224B                                                                                                                              0.0s
+ => [internal] load metadata for docker.io/library/tomcat:8.0.20-jre8                                                                                             0.2s
+ => [internal] load .dockerignore                                                                                                                                 0.0s
+ => => transferring context: 2B                                                                                                                                   0.0s
+ => CACHED [1/3] FROM docker.io/library/tomcat:8.0.20-jre8@sha256:579e042fb31e6975062276489cbdb3d9c942661a1d489f122d29ce2249e2ed34                                0.1s
+ => => resolve docker.io/library/tomcat:8.0.20-jre8@sha256:579e042fb31e6975062276489cbdb3d9c942661a1d489f122d29ce2249e2ed34                                       0.1s
+ => [internal] load build context                                                                                                                                 0.0s
+ => => transferring context: 286B                                                                                                                                 0.0s
+ => [2/3] COPY tomcat-users.xml /usr/local/tomcat/conf/                                                                                                           0.0s
+ => [3/3] COPY target/*.war /usr/local/tomcat/webapps/                                                                                                            0.0s
+ => exporting to image                                                                                                                                            0.0s
+ => => exporting layers                                                                                                                                           0.0s
+ => => writing image sha256:d3fe247df6d3f235158a24c956e65dfba7d31799c933f5f7e0d9727b55a50563                                                                      0.0s
+ => => naming to docker.io/library/java-app:v2                                                                                                                    0.0s
+[root@DOCKER one]# docker run -itd --name cont2 -p 1111:8080 java-app:v2 ------------------------> command to create a container
+f07faf996f95ebe63af0b7855c4e32cba5ae9d9d09d47ba8d7d0b84c587c868d
+[root@DOCKER one]# 
+
+tomcat credentials are below
+username: tomcat
+password:admin@123
+
+http://44.201.101.190:1111/manager/html ---------------> TOMCAT application has been launched
+
+TOMCAT application has launched
+
+
+what we done is 
+first we get the code from github
+we do build the code with maven
+we copied the war file into a container by writing Dockerfie and copied the TOMCAT credentials as well by writing Dockerfile
+
+
+NOW WE WILL DO SAME STEPS FOR NODE JS CODE APPLICATION
+===========================================================
+
+First we will get nodejs code from github
+
+[root@DOCKER ~]# git clone https://github.com/pranay-devops666/nodejs-docker.git ---------------------> command to pull the code from github(central) to gihub(local)
+Cloning into 'nodejs-docker'...
+remote: Enumerating objects: 15, done.
+remote: Counting objects: 100% (8/8), done.
+remote: Compressing objects: 100% (6/6), done.
+remote: Total 15 (delta 2), reused 2 (delta 2), pack-reused 7 (from 1)
+Receiving objects: 100% (15/15), done.
+Resolving deltas: 100% (2/2), done.
+[root@DOCKER ~]# ll
+total 0
+drwxr-xr-x. 3 root root  97 Mar  9 05:45 nodejs-docker
+drwxr-xr-x. 5 root root 135 Mar  9 05:40 one
+[root@DOCKER ~]# ll
+total 0
+drwxr-xr-x. 3 root root  97 Mar  9 05:45 nodejs-docker
+drwxr-xr-x. 5 root root 135 Mar  9 05:40 one
+[root@DOCKER ~]# cd nodejs-docker/
+[root@DOCKER nodejs-docker]# ll
+total 16
+-rw-r--r--. 1 root root 110 Mar  9 05:45 Dockerfile
+-rw-r--r--. 1 root root 263 Mar  9 05:45 index.js
+-rw-r--r--. 1 root root  82 Mar  9 05:45 package-lock.json
+-rw-r--r--. 1 root root 436 Mar  9 05:45 package.json
+[root@DOCKER nodejs-docker]# 
+
+here we will write the Dockerfile
+
+vim Dockerfile ----------------------> command to create a Dockerfile
+
+FROM node:16
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+EXPOSE 80
+CMD ["node", "index.js"]
+
+:wq
+
+[root@DOCKER nodejs-docker]# docker build -t node-app .  --------------------> command to build Dockerfile to get image
+[+] Building 12.1s (10/10) FINISHED                                                                                                                     docker:default
+ => [internal] load build definition from Dockerfile                                                                                                              0.0s
+ => => transferring dockerfile: 207B                                                                                                                              0.0s
+ => [internal] load metadata for docker.io/library/node:16                                                                                                        0.4s
+ => [internal] load .dockerignore                                                                                                                                 0.0s
+ => => transferring context: 2B                                                                                                                                   0.0s
+ => [1/5] FROM docker.io/library/node:16@sha256:f77a1aef2da8d83e45ec990f45df50f1a286c5fe8bbfb8c6e4246c6389705c0b                                                 10.3s
+ => => resolve docker.io/library/node:16@sha256:f77a1aef2da8d83e45ec990f45df50f1a286c5fe8bbfb8c6e4246c6389705c0b                                                  0.0s
+ => => sha256:f77a1aef2da8d83e45ec990f45df50f1a286c5fe8bbfb8c6e4246c6389705c0b 776B / 776B                                                                        0.0s
+ => => sha256:1ddc7e4055fdb6f6bf31063b593befda814294f9f904b6ddfc21ab1513bafa8e 7.23kB / 7.23kB                                                                    0.0s
+ => => sha256:311da6c465ea1576925360eba391bcd32dece9be95960a0bc9ffcb25fe712017 50.50MB / 50.50MB                                                                  0.6s
+ => => sha256:7e9bf114588c05b2df612b083b96582f3b8dbf51647aa6138a50d09d42df2454 17.58MB / 17.58MB                                                                  0.2s
+ => => sha256:ffd9397e94b74abcb54e514f1430e00f604328d1f895eadbd482f08cc02444e5 51.89MB / 51.89MB                                                                  0.6s
+ => => sha256:c94b82f9827cab6e421b350965a9ef11b25b13ffbd1030536203d541f55dcbe2 2.00kB / 2.00kB                                                                    0.0s
+ => => sha256:513d779256048c961239af5f500589330546b072775217272e19ffae1635e98e 191.90MB / 191.90MB                                                                2.9s
+ => => extracting sha256:311da6c465ea1576925360eba391bcd32dece9be95960a0bc9ffcb25fe712017                                                                         1.3s
+ => => sha256:0e421f66aff42bb069dffc26af6d132194b22a1082b08c5ef7cd69c627783c04 34.79MB / 34.79MB                                                                  1.0s
+ => => sha256:ca266fd6192108b67fb57b74753a8c4ca5d8bd458baae3d4df7ce9f42dedcc1d 2.27MB / 2.27MB                                                                    0.7s
+ => => sha256:ae3b95bbaa61ce24cefdd89e7c74d6fbd7713b2bcae93af47063d06bd7e02172 4.20kB / 4.20kB                                                                    0.7s
+ => => sha256:ee7d78be1eb92caf6ae84fc3af736b23eca018d5dedc967ae5bdee6d7082403b 450B / 450B                                                                        0.8s
+ => => extracting sha256:7e9bf114588c05b2df612b083b96582f3b8dbf51647aa6138a50d09d42df2454                                                                         0.3s
+ => => extracting sha256:ffd9397e94b74abcb54e514f1430e00f604328d1f895eadbd482f08cc02444e5                                                                         1.3s
+ => => extracting sha256:513d779256048c961239af5f500589330546b072775217272e19ffae1635e98e                                                                         3.8s
+ => => extracting sha256:ae3b95bbaa61ce24cefdd89e7c74d6fbd7713b2bcae93af47063d06bd7e02172                                                                         0.0s
+ => => extracting sha256:0e421f66aff42bb069dffc26af6d132194b22a1082b08c5ef7cd69c627783c04                                                                         0.8s
+ => => extracting sha256:ca266fd6192108b67fb57b74753a8c4ca5d8bd458baae3d4df7ce9f42dedcc1d                                                                         0.0s
+ => => extracting sha256:ee7d78be1eb92caf6ae84fc3af736b23eca018d5dedc967ae5bdee6d7082403b                                                                         0.0s
+ => [internal] load build context                                                                                                                                 0.0s
+ => => transferring context: 39.47kB                                                                                                                              0.0s
+ => [2/5] WORKDIR /app                                                                                                                                            0.7s
+ => [3/5] COPY package*.json ./                                                                                                                                   0.0s
+ => [4/5] RUN npm install                                                                                                                                         0.5s
+ => [5/5] COPY . .                                                                                                                                                0.1s
+ => exporting to image                                                                                                                                            0.0s
+ => => exporting layers                                                                                                                                           0.0s
+ => => writing image sha256:da8088c4c65a289b996dc20d01d2076f33ff32fe9e310fe5c38c35b912ef0054                                                                      0.0s
+ => => naming to docker.io/library/node-app                                                                                                                       0.0s
+[root@DOCKER nodejs-docker]# docker run -itd --name cont-5 -p 3333:80 node-app ------------------------> command to create a container
+609f995e1cd21a2f2b899527bfd9d32fcd21eee0eea41915ad626a453c7db07f
+[root@DOCKER nodejs-docker]# 
+
+
+access the application by giving ec2-instance publicIP:container number(3333)
+
+http://44.201.101.190:3333/ ---------------------> access the application by giving ec2-instance publicIP:container number(3333)
+
+Following output below for above node-js application deployment
+===================================================================
+
+http://44.201.101.190:3333/ ---------------------> access the application by giving ec2-instance publicIP:container number(3333)
+
+Output
+============
+** Hey my app was deployed :) **
+
+
+NOW WE WILL DO FOR DATABASE
+==================================
+
+first go to home
+create one folder name it as database
+mkdir database
+cd database
+create a file for sql name it as init.sql
+
+all steps done below
+
+
+[root@DOCKER ~]# mkdir databse -----------------> command to create folder name with database
+[root@DOCKER ~]# cd databse/ -------------------> command to go to created database
+[root@DOCKER databse]# vim init.sql --------------> command to create a sql file with name init.sql
+[root@DOCKER databse]# 
+
+
+vim init.sql --------------> command to create a sql file with name init.sql
+
+create database pranay;
+use pranay;
+create table babu;
+create table devops;
+
+:wq
+
+
+now write Dockerfile for Database
+
+vim Dockerfile ----------------------> command to create a Dockerifle
+
+FROM mysql/mysql-server:5.7
+ENV MYSQL_USER=root
+ENV MYSQL_ROOT_PASSWORD=babu@123
+EXPOSE 3306
+COPY init.sql docker-entrypoint-initdb.d/db_backup.sql
+
+:wq
+
+
+[root@DOCKER databse]# vim Dockerfile --------------------------> command to create a Dockerfile
+[root@DOCKER databse]# docker build -t db-image:v1 . ----------------> command to build the Dockerfile to get an Image
+[+] Building 7.0s (7/7) FINISHED                                                                                                                        docker:default
+ => [internal] load build definition from Dockerfile                                                                                                              0.0s
+ => => transferring dockerfile: 238B                                                                                                                              0.0s
+ => [internal] load metadata for docker.io/mysql/mysql-server:5.7                                                                                                 0.3s
+ => [internal] load .dockerignore                                                                                                                                 0.0s
+ => => transferring context: 2B                                                                                                                                   0.0s
+ => [internal] load build context                                                                                                                                 0.0s
+ => => transferring context: 172B                                                                                                                                 0.0s
+ => [1/2] FROM docker.io/mysql/mysql-server:5.7@sha256:1178cdd375f758968cd834ac4057bae41307e64b7c69a9e145896e7b11f48064                                           5.6s
+ => => resolve docker.io/mysql/mysql-server:5.7@sha256:1178cdd375f758968cd834ac4057bae41307e64b7c69a9e145896e7b11f48064                                           0.0s
+ => => sha256:76cc4215b650341f69053ddaf76eb2d4819a9d56ee642574941bd57e960452f4 82.92MB / 82.92MB                                                                  1.0s
+ => => sha256:1178cdd375f758968cd834ac4057bae41307e64b7c69a9e145896e7b11f48064 1.56kB / 1.56kB                                                                    0.0s
+ => => sha256:a4ad24fe52cdf82a35c6f2dae7670cfebf39357de983cb909db07c8b56df4dd1 4.87kB / 4.87kB                                                                    0.0s
+ => => sha256:d70f3c0cccbab6c3366edabdb37e7bf060cb296a0d2447e4b47a91ddee654664 56.18MB / 56.18MB                                                                  0.6s
+ => => sha256:e7dc89aa39f7646f2f5f702bfb43d0321dd83588c30d8d8725078fc4868aa15f 2.09MB / 2.09MB                                                                    0.1s
+ => => sha256:349b52643cc3e2b19e5857fcd5c3c49f63ec30f6dc8cf5c73b1a39386ac0920e 694B / 694B                                                                        0.2s
+ => => sha256:25b0bb53e492abaedf0d6c259c5786bf49e6e47595373eedc7feb24add03aa01 726B / 726B                                                                        0.2s
+ => => sha256:c91c597e717dae065078ef156a14f6a0313cd2a42ba5badc3c288c73feffde0f 3.79kB / 3.79kB                                                                    0.3s
+ => => sha256:62ddcf4a4134a8d591e51e21fce299297ff79de531dc5a53658f58ac069d6c29 279B / 279B                                                                        0.3s
+ => => sha256:c7e93886e49609f3d2a37f4f1d5bda301d5cad0c970a831a206df12ec1c0917c 765B / 765B                                                                        0.4s
+ => => extracting sha256:d70f3c0cccbab6c3366edabdb37e7bf060cb296a0d2447e4b47a91ddee654664                                                                         1.4s
+ => => extracting sha256:e7dc89aa39f7646f2f5f702bfb43d0321dd83588c30d8d8725078fc4868aa15f                                                                         0.0s
+ => => extracting sha256:76cc4215b650341f69053ddaf76eb2d4819a9d56ee642574941bd57e960452f4                                                                         2.8s
+ => => extracting sha256:25b0bb53e492abaedf0d6c259c5786bf49e6e47595373eedc7feb24add03aa01                                                                         0.0s
+ => => extracting sha256:349b52643cc3e2b19e5857fcd5c3c49f63ec30f6dc8cf5c73b1a39386ac0920e                                                                         0.0s
+ => => extracting sha256:62ddcf4a4134a8d591e51e21fce299297ff79de531dc5a53658f58ac069d6c29                                                                         0.0s
+ => => extracting sha256:c91c597e717dae065078ef156a14f6a0313cd2a42ba5badc3c288c73feffde0f                                                                         0.0s
+ => => extracting sha256:c7e93886e49609f3d2a37f4f1d5bda301d5cad0c970a831a206df12ec1c0917c                                                                         0.0s
+ => [2/2] COPY init.sql /etc/mysql/conf.d/db_backup.sql                                                                                                           1.0s
+ => exporting to image                                                                                                                                            0.0s
+ => => exporting layers                                                                                                                                           0.0s
+ => => writing image sha256:41938c0319d87fd79919ec86499015747c86ab94cc791099de2e5e7b85f5c62c                                                                      0.0s
+ => => naming to docker.io/library/db-image:v1                                                                                                                    0.0s
+[root@DOCKER databse]# docker run -d --name dbcont -p 5555:3306 db-image:v1    ------------------------> command to create a container
+6875c1e789c6bc84b3963163cad8f1e625ebd3526fb1b1f6172f98a8e0bebb11
+[root@DOCKER databse]# 
+
+
+NOTE: 01 IMportant point need to remember here
+================================================
+
+while creating a container here for DATABASE we should not use give -itd we need to give only -d why becaise containers doesn't come running state 
+if we give -itd means
+
+NOTE: 01 IMportant point need to remember here
+================================================
+
+* for example web server code 
+* if we learnt Dockerfile for nginx/httpd means it is easy to write Dockerfile for TOMCAT
+* * if we learnt Dockerfile for PYTHON means it is easy to write Dockerfile for NODE.JS
+
+
+[root@DOCKER databse]# docker exec -it dbcont bash  --------------------> command to eneter into db container
+bash-4.2# mysql -u root -p-----------------------------------------------> command to login databse
+Enter password:    -------------------------------------------------->           password ------>babu@123
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 11
+Server version: 5.7.41 MySQL Community Server (GPL)
+
+Copyright (c) 2000, 2023, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> show databases; -----------------------> command to show created Databases
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| sys                |
++--------------------+
+4 rows in set (0.00 sec)
+
+mysql> use pranay;
+Database changed
+mysql> show tables;
+Empty set (0.00 sec)
+
+
+docker exec -it dbcont bash--------> command to eneter into db container
+mysql -u root -p--------> command to login databse
+password ------>babu@123
+show databses;
+use pranay;
+show tables;
