@@ -1,0 +1,459 @@
+Jenkins Class -06
+=========================
+
+https://devops-cicd.hashnode.dev/jenkins-integrated-with-nexus
+
+
+TOPIC: NEXUS INTEGRATION WITH JENKINS
+========================================
+
+Introduction
+=============
+In the DevOps ecosystem, seamless collaboration between tools is key to achieving efficient and reliable software delivery. 
+Jenkins, a leading CI/CD automation tool, is often used to build and test applications, producing artifacts like WAR files as outputs. However, 
+managing these artifacts effectively—storing them securely, versioning them, and making them readily available for deployment—requires a robust repository solution.
+
+Enter Nexus Repository Manager, a powerful tool designed to manage build artifacts with precision and scalability. 
+By integrating Jenkins with Nexus, organizations can automate artifact storage, ensure traceability, and streamline deployment pipelines.
+
+In this blog, we’ll explore how to integrate Jenkins with Nexus to store WAR files, using real-world examples and best practices 
+to highlight the benefits of this setup.
+
+What is Nexus?
+=================
+Nexus is a repository manager that helps in storing, managing, and retrieving build artifacts, such as WAR, JAR, and Docker images, 
+enabling efficient artifact lifecycle management and supporting CI/CD pipelines.
+
+Why Use Jenkins with Nexus for Artifact Management?
+====================================================
+1. Centralized Storage: Nexus acts as a central repository for all your artifacts, making it easy to manage and retrieve builds.
+
+2. Version Control: It provides versioning capabilities for artifacts, ensuring traceability.
+
+3. Secure and Scalable: With role-based access control, Nexus ensures that your artifacts are secure and can handle enterprise-scale storage needs.
+
+Real-Time Scenario: Automating Artifact Management for a Banking Application
+=============================================================================
+The Challenge:
+================
+Imagine you're part of a DevOps team managing a multi-tier banking application. The application requires frequent updates, and the build pipeline 
+generates a WAR file as the deployable artifact. Without an automated system for artifact storage and retrieval, your team faces several issues:
+
+1. Manual Handling:
+Storing the WAR file manually leads to errors and inefficiencies.
+
+2. Versioning Confusion:
+It's difficult to track which version of the WAR file is currently deployed.
+
+3. Deployment Delays:
+Manually locating and retrieving artifacts slows down deployments.
+
+4. Security Risks:
+Untracked storage of artifacts increases the risk of unauthorized access or data loss.
+
+The Solution:
+===============
+By integrating Jenkins with Nexus, you can automate the process of storing and managing the WAR file. Every time Jenkins completes a build, 
+the WAR file is automatically pushed to a hosted repository in Nexus. This repository acts as a centralized, secure storage for all your application artifacts, 
+making it easy to track versions and retrieve the files for future deployments.
+
+How It Works:
+==============
+
+1. Jenkins Pipeline:
+The pipeline builds the WAR file from the source code.
+
+2. Nexus Integration:
+Using the Nexus Artifact Uploader plugin, the pipeline uploads the WAR file to the Nexus repository.
+
+3. Artifact Versioning:
+Nexus automatically assigns a version to the uploaded artifact, ensuring traceability.
+
+4. Deployment:
+The CD pipeline pulls the specific WAR file version from Nexus and deploys it to the Tomcat server.
+
+This integration eliminates manual intervention, improves traceability, and ensures secure artifact storage—allowing the banking application 
+to be deployed efficiently and reliably.
+
+During a production deployment, you notice that a recent release of the banking application has a bug. Nexus allows you to quickly retrieve 
+the last stable version of the WAR file, enabling a swift rollback without disrupting services.
+
+Step by step process to integrating the Nexus with Jenkins
+=============================================================
+STEP-1: LAUNCH INSTANCE WITH T2.MEDIUM AND 8081 PORT AND 20 GB OF EBS VOLUME
+
+STEP-2: INSTALL JAVA17 AS THE NEXUS DEPENDENCY
+
+yum install java-17-amazon-corretto -y
+
+SETP-4: GO TO opt FOLDER
+
+cd /opt
+
+STEP-5: DOWNLOAD THE NEUXS
+
+wget https://download.sonatype.com/nexus/3/nexus-unix-x86-64-3.79.0-09.tar.gz
+
+STEP-6: UNTAR THE FILE
+
+tar -zxvf nexus-unix-x86-64-3.79.0-09.tar.gz
+
+STEP-7: ADD NEXUS USER
+
+useradd nexus
+
+STEP-8: CHANGE THE OWNERS OF THE FILES
+
+chown -R nexus:nexus nexus-3.79.0-09 sonatype-work
+
+STEP-9: CHANGE nexus.rc file
+
+vim /opt/nexus-3.79.0-09/bin/nexus
+
+run_as_user="nexus"
+
+STEP-10: login as nexus user
+
+su - nexus
+
+STEP-11: NOW START THE NEXUS
+
+./opt/nexus-3.79.0-09/bin/nexus start
+
+STEP-12: CHECK THE STATUS
+
+./nexus-3.79.0-09/bin/nexus status
+
+wait for 2 minutes and copy the public-ip of your nexus server and access it with 8081 port
+
+CLICK ON SIGN-IN
+
+
+
+IT WILL ASKS THE USER NAME & PASSWORD
+
+USERNAME: admin
+
+PASSWORD:
+
+cat /app/sonatype-work/nexus3/admin.password
+
+use this command in our server to get the password and paste it into our nexus dashboard
+
+
+
+Click on Next
+
+
+
+Setup new password and click on Next
+
+
+
+Select Enable anonymous access and click on Next
+
+
+
+Click on Finish
+
+
+
+NOW GO TO SERVER ADMINISTRATION AND CONFIGURATION
+
+
+
+SELECT REPOSITORIES
+
+
+
+SELECT CREATE-REPOSITORY
+
+
+
+SELECT MAVEN2(HOSTED)
+
+
+
+GIVE REPOSITORY NAME AS myrepo and deployment policy as Allow redeploy and click on create repositories
+
+
+
+
+
+now you can see our repository created in dashboard
+
+
+
+NOW GO TO JENKINS AND INSTALL PLUGIN "nexus artifactory uploader"
+
+
+
+Open the Jenkins job and configure the job, if you dont know how? you can refer this blog first
+
+https://devops-cicd.hashnode.dev/deploy-a-java-application-using-jenkins
+
+Go to build steps and select Nexus artifact uploader and add the nexus credentials
+
+
+
+
+
+Now click on Add artifact
+
+
+
+Now save the configurations and build the job. If the build gets success, then war file will gets stored on Nexus Repository.
+
+
+
+Now open the Nexus Repository
+
+
+
+Thats how we can integrate the nexus with Jenkins, In upcoming blogs i will show you in pipeline jobs also.
+
+Conclusion
+==============
+Integrating Jenkins with Nexus for storing WAR files not only streamlines your DevOps workflow but also adds a layer of security and efficiency to
+your artifact management process. By following this guide, you can ensure your builds are well-organized and readily available for deployment.
+
+If you love stories that inspire learning, growth, and productivity, consider subscribing for more! If this article added value to your journey, 
+your support would mean the world to me — only if it’s within your means. Let’s stay connected on LinkedIn too. Thank you for reading 💕
+
+
+
+
+Real time practice starts here
+==================================
+
+
+CODE ------> BUILD-----------> TEST ----------> DEPLOY
+
+Artifact: The code which passes all the test cases and ready for the production.
+
+simple ga generate ayye war file ne we can called it as Artifact
+
+we need to store that artifact it has different tools like Nexus, Jfrog & S3 these 3 are artifact services
+
+Now i will take one seperate   EC2-Instance and install nexus on it after that i will do integrate it with the pipeline
+
+I will add a stage to store the war file
+
+
+
+Launch an Instance------. name:Jenkins------>kernel 6.1----------->c7i-flex-large---------> with keypair--------> jenkins security group-------> 10ebs ----> launch
+
+Launch and connect EC2-Instance
+
+do set-up jenkins dashboard like below
+
+sudo yum update –y
+sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+sudo yum upgrade
+sudo yum install java-17-amazon-corretto -y
+sudo yum install jenkins git -y
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+sudo systemctl status jenkins
+
+above all commands to set-up a Jenkins Dashboard
+
+Create a new job
+
+Select create a new job---------> name:pranay------< select free-stype---> ok
+
+do configure the created job------> select git copy & paste here github repo---------> save & Build
+
+Source code has came
+
+now do configure maven tool for created job
+
+go to manage jenkins-----> select tools----------> select maven------> name:mymaven--->save-----> ok
+
+now do configure the job pipeline-----> select build steps----> select Invoke top-level Maven targets-----> give command as clean package ---> save & Build now
+
+we got the war file for that artifact war file we need to store for that storing purpose we are using Nexus here
+
+Maintain always a seperate EC2-instance for NEXUS
+
+Launch an Instance------. name:Nexus------>kernel 6.1----------->c7i-flex-large---------> with keypair-------->  security group 
+(create a new security group for NEXUS because nexus port number is 8081)
+slect security group ---------> edit 1. ssh, anywhere 2. custom tcp, port range:8081, anywhere group name: nexus security group---------> 
+--------> need minimum 20ebs for nexus
+upto 30gb  for free we will take 25 for this now----> launch
+
+Launch and connect EC2-Instance
+
+hostnamectl set-hostname "NEXUS" ----------> command to change hostname for NEXUS
+hostnamectl set-hostname "Jenkins" ----------> command to change hostname for JENKINS
+
+now we need to install NEXUS on NEXUS EC2-Instance by following below commands
+
+STEPS TO SETUP AN NEXUS DASHBOARD
+====================================
+
+1. Instance type: 2 cpus & 4 GB RAM & 20 GB EBS
+2. Java install
+3. Nexus download(sonatype nexus)
+4. untar (unzip)
+5. change the owners of those files (nexus)
+6. Nexus user create
+7. login as user and nexus start
+
+yum install java-17-amazon-corretto -y--------------> command to install java-17th version
+
+now create on folder
+
+mkdir /app----> enter
+
+
+https://help.sonatype.com/en/install-nexus-repository.html
+
+https://help.sonatype.com/en/download.html
+
+wget https://download.sonatype.com/nexus/3/nexus-3.89.1-02-linux-x86_64.tar.gz----------> command to download nexus 
+
+[root@NEXUS ~]# tar -zxvf nexus-3.89.1-02-linux-x86_64.tar.gz--------> command to unzip the file
+
+total 454244
+-rw-r--r--. 1 root root 465144623 Feb 11 12:16 nexus-3.89.1-02-linux-x86_64.tar.gz
+[root@NEXUS app]#
+
+[root@NEXUS app]# ll
+total 454244
+drwxr-xr-x. 6 root root        94 Feb 26 06:33 nexus-3.89.1-02
+-rw-r--r--. 1 root root 465144623 Feb 11 12:16 nexus-3.89.1-02-linux-x86_64.tar.gz
+drwxr-xr-x. 3 root root        20 Feb 10 18:29 sonatype-work
+[root@NEXUS app]#
+
+cd nexus-3.89.1-02 -------> command to go to that folder
+
+[root@NEXUS nexus-3.89.1-02]# cd bin/
+[root@NEXUS bin]# ll
+total 275996
+-rwxr-xr-x. 1 root root      6735 Feb 10 17:53 nexus
+-rw-r--r--. 1 root root      1325 Feb 10 17:53 nexus.vmoptions
+-rw-r--r--. 1 root root 282604548 Feb 10 18:28 sonatype-nexus-repository-3.89.1-02.jar
+[root@NEXUS bin]# ./nexus start
+WARNING: ************************************************************
+WARNING: Detected execution as "root" user.  This is NOT recommended!
+WARNING: ************************************************************
+Starting nexus
+[root@NEXUS bin]#
+
+[root@NEXUS bin]# useradd nexus
+[root@NEXUS bin]# su - nexus
+[nexus@NEXUS ~]$
+[nexus@NEXUS app]$ ll
+total 454244
+drwxr-xr-x. 6 root root        94 Feb 26 06:33 nexus-3.89.1-02
+-rw-r--r--. 1 root root 465144623 Feb 11 12:16 nexus-3.89.1-02-linux-x86_64.tar.gz
+drwxr-xr-x. 3 root root        20 Feb 10 18:29 sonatype-work
+[nexus@NEXUS app]$ cd nexus-3.89.1-02/
+[nexus@NEXUS bin]$ ll
+total 275996
+-rwxr-xr-x. 1 root root      6735 Feb 10 17:53 nexus
+-rw-r--r--. 1 root root      1325 Feb 10 17:53 nexus.vmoptions
+-rw-r--r--. 1 root root 282604548 Feb 10 18:28 sonatype-nexus-repository-3.89.1-02.jar
+[nexus@NEXUS bin]$ ./nexus start
+Starting nexus
+./nexus: line 175: /app/sonatype-work/nexus3/nexus.pid: Permission denied
+[nexus@NEXUS bin]$
+
+Nexus has been started but got an error as ./nexus: line 175: /app/sonatype-work/nexus3/nexus.pid: Permission denied
+
+permission denied on line no.175
+
+solution is change the owners for it run as neus user
+
+[root@NEXUS bin]# ll
+total 275996
+-rwxr-xr-x. 1 root root      6735 Feb 10 17:53 nexus
+-rw-r--r--. 1 root root      1325 Feb 10 17:53 nexus.vmoptions
+-rw-r--r--. 1 root root 282604548 Feb 10 18:28 sonatype-nexus-repository-3.89.1-02.jar
+[root@NEXUS bin]# chown nexus:nexus nexus
+[root@NEXUS bin]# 
+[root@NEXUS bin]# su - nexus
+Last login: Thu Feb 26 06:36:45 UTC 2026 on pts/1
+[nexus@NEXUS ~]$
+[nexus@NEXUS ~]$ cd /app/nexus-3.89.1-02/bin/
+[nexus@NEXUS ~]$ cd /app/
+[nexus@NEXUS app]$ ll
+total 454244
+drwxr-xr-x. 6 nexus nexus        94 Feb 26 06:33 nexus-3.89.1-02
+-rw-r--r--. 1 root  root  465144623 Feb 11 12:16 nexus-3.89.1-02-linux-x86_64.tar.gz
+drwxr-xr-x. 3 nexus nexus        20 Feb 10 18:29 sonatype-work
+[nexus@NEXUS app]$ cd nexus-3.89.1-02/bin/
+[nexus@NEXUS bin]$ ll
+total 275996
+-rwxr-xr-x. 1 nexus nexus      6735 Feb 10 17:53 nexus
+-rw-r--r--. 1 nexus nexus      1325 Feb 10 17:53 nexus.vmoptions
+-rw-r--r--. 1 nexus nexus 282604548 Feb 10 18:28 sonatype-nexus-repository-3.89.1-02.jar
+[nexus@NEXUS bin]$ ./nexus start
+Starting nexus
+[nexus@NEXUS bin]$
+
+Sonatype Nexus Repository Dashboard has been Launched
+
+why we are using the NEXUS is to store the Artifacts by creating a repository and we stored in it
+
+Go to Sonatype Nexus Repository Dashboard------> select settings --------> select repository-----> create new repo------> select maven2(hosted) option----->
+name:repo name------>in deployment policy: allow redploy(means we can store our war file multiple times)------> create repository
+
+repo has been created
+
+now developers will update this created information in pom.xml like information related to created repo of name, url like below
+
+go to github code --------->open pom.xml file------> open it in here we need to update Artifact_URL in line number 36 & save commit
+
+now we need to store the war file in Sonatype Nexus Repository Dashboard of created repo
+
+to do like that we need to integrate to jenkins with the help of jenkins plugin
+
+Go to Jenkins Dashboard--------> go to manage jenkins---------> selct plugins, available plugins-------> search as nexusartifact uploder plugin-------> install it
+
+do configure created job---------> select build steps-----> nexus artifact uploder---------> fill all details here nexus version as official document, protocal:HTTP
+------>url:copy and paste here nexus dashbord url like only public IP & port number 8081----------> add nexus credentials-------> GroupId:it will be in pom.xml at
+line number:4--------> version it will be in pom.xml at line no:7--------> give repo name:My-Repo------> add Artifacts:ArtifactId:it will be in pom.xml at line no:5
+as myweb----------> type:war-------> File path: target/myweb-8.7.1.war(it will be seen in target folder) ---------> save & build now
+
+Build was successful
+
+now we can deploy the application by taking an seperate Tomcat EC2-Instance
+
+Launch an Instance------. name:Jenkins------>kernel 6.1----------->c7i-flex-large---------> with keypair--------> jenkins security group-------> 20ebs ----> launch
+
+Launch and connect EC2-Instance
+
+vim tomcat.sh
+
+yum install java-17-amazon-corretto -y
+wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.115/bin/apache-tomcat-9.0.115.tar.gz
+tar -zxvf apache-tomcat-9.0.115.tar.gz
+sed -i '56  a\<role rolename="manager-gui"/>' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '57  a\<role rolename="manager-script"/>' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '58  a\<user username="tomcat" password="admin@123" roles="manager-gui, manager-script"/>' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '59  a\</tomcat-users>' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '56d' apache-tomcat-9.0.115/conf/tomcat-users.xml
+sed -i '21d' apache-tomcat-9.0.115/webapps/manager/META-INF/context.xml
+sed -i '22d'  apache-tomcat-9.0.115/webapps/manager/META-INF/context.xml
+sh apache-tomcat-9.0.115/bin/startup.sh
+
+:wq
+
+sh tomcat.sh
+
+Tomcat has been started
+
+Tomcat started.
+[root@ip-172-31-84-60 ~]#
+
+we need a plugin to install an application in jenkins
+
+Go to jenkins Dashboard--------> go to manage jenkins---------> select available plugins------> search as Deploy to Container and install it
+
+Do configure the job--------> select post-build actions-------> select deploy war/ear to container-------->target/*.war------> context:mynewapp------->
+add containers: Tomcat:9th version----------> add tomcat credentials-----> save & Build
+
+Application deployed successfully
