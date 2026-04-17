@@ -1,0 +1,1383 @@
+KUBERNETES K8S PROJECT-1 BLOOD BANK APP USING KOPS
+======================================================
+
+
+
+
+Github url-1: https://github.com/devops0014/ltibbhackathon.git
+Github url-2 : https://github.com/devops0014/bankapp-manifestfiles.git
+
+we are going to do 3-Tier app
+
+first lets talk about a client requirements
+
+client need an blood bank application
+
+as per client said need all information in my app
+
+PHP Written cide
+
+developers will write the code for an application----------> run in manually-------------> pushed the code in github----> CI Pipeline
+
+In CI/CD Pipeine stages are CODE, CAQ, Create DOCKER IMAGE, SCAN HE IMAGE, TAG AND PUSH INTO DOCKERHUB, RUN IN CONTAINERS
+
+Tools need
+===========
+
+To implement the whole process automate will use CI/CD for CI/CD needed tool id JENKINS
+
+To create Images we need DOCKER to pack an Application
+
+To deploy and run the application we need KUBERNETES(K8's)
+
+TO monitor we need PROMETHEUS & GRAFANA
+
+To perform CODE QUALITY ANALYSIS(CAQ) we need SONARQUBE
+
+To scan the Image we need TRIVY
+
+what clusters we need to use here is EKS cluster or KOPS cluster ?
+
+As of now we learned KOPS Custer this project also will do in KOPS Custer
+
+For EKS cluster e can do 2 types 1. Manual & 2. By using Terraform
+
+first we will do in KOPS Custer for this project and later we will do in EKS cluster also
+
+
+lets login into an aws account-------------> In here overall we need servers for Jenkins, Docker & Kubernetes
+
+Lets take one server for Jenkins, Docker & sonarqube 
+
+Launch an one Instanece ---------------> name:myserver -------> instance type: m7i-flex.large --------> withkeypair ------> security groups:
+mysecuritygroups------------->ebs volume:28gb -------------> attach IAM role to the instance
+
+Need to be install now are jenkins, docker sonarqube & trivy
+
+[root@ip-172-31-33-227 ~]# yum install git docker -y && systemctl start docker----------------->
+
+Now need to install JENKINS
+
+[root@ip-172-31-33-227 ~]#sudo yum update –y
+sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+sudo yum upgrade
+sudo yum install java-17-amazon-corretto -y
+sudo yum install jenkins git -y
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+sudo systemctl status jenkins
+
+
+http://54.196.53.29:8080/ -----------------> Jenkins Dashboard has been launched
+
+Now need to install SONARQUBE
+
+[root@ip-172-31-33-227 ~]# docker run -itd --name sonar -p 9000:9000 sonarqube:lts-community ------------------------>
+Unable to find image 'sonarqube:lts-community' locally
+lts-community: Pulling from library/sonarqube
+60d98d907669: Pull complete 
+e24a8b9e652f: Pull complete 
+f3929ce9ef98: Pull complete 
+1df735f481ad: Pull complete 
+5d5a1fad7028: Pull complete 
+eb27e3a98da1: Pull complete 
+c7ad1fe61e07: Pull complete 
+4f4fb700ef54: Pull complete 
+Digest: sha256:f709975ab31d2d08f5a3ae2dc73a31ee011afc8cf28845082c17c55d45df9df5
+Status: Downloaded newer image for sonarqube:lts-community
+11b6723b19d0d4fc6291ac14ab88664d3f8c6c5bbe80f4bd2617170b5380825b
+[root@ip-172-31-33-227 ~]# 
+
+Now need to install TRIVY
+
+sudo yum install -y wget && wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh && sudo sh install.sh -b /usr/local/bin
+-------------------> command to install trivy on EC2-Instance
+
+trivy --version --------------------------->  command to check version of trivy
+
+[root@ip-172-31-33-227 ~]# trivy --version -------------------------------------->
+Version: 0.69.3
+[root@ip-172-31-33-227 ~]# 
+
+trivy image imagename -----------------> command to scan the image
+
+Now we will create a Job in Jenkins
+
+Select create Job--------> name:MyDeployment
+
+pipeline {
+    agent any
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/pranay-devops666/ltibbhackathon.git'
+            }
+        }
+    }
+}
+
+save & Build
+
+Build Got Success
+
+[root@ip-172-31-33-227 ~]# cd /var/lib/jenkins/workspace/MyDeployment -------------------------------------->
+[root@ip-172-31-33-227 MyDeployment]# ll
+total 320
+-rw-r--r--. 1 jenkins jenkins    77 Mar 23 07:27 Dockerfile
+-rwxr-xr-x. 1 jenkins jenkins  7362 Mar 23 07:27 README.md
+-rwxr-xr-x. 1 jenkins jenkins 13497 Mar 23 07:27 blood-donation-chart.css
+-rwxr-xr-x. 1 jenkins jenkins 20304 Mar 23 07:27 blood-donation-chart.html
+-rwxr-xr-x. 1 jenkins jenkins 15396 Mar 23 07:27 blood-donation-facts.css
+-rwxr-xr-x. 1 jenkins jenkins 18829 Mar 23 07:27 blood-donation-facts.html
+drwxr-xr-x. 2 jenkins jenkins    58 Mar 23 07:27 bmi
+drwxr-xr-x. 2 jenkins jenkins    55 Mar 23 07:27 caloriecalculator
+drwxr-xr-x. 2 jenkins jenkins 16384 Mar 23 07:27 components
+-rwxr-xr-x. 1 jenkins jenkins   315 Mar 23 07:27 config.php
+drwxr-xr-x. 2 jenkins jenkins    40 Mar 23 07:27 database
+-rw-r--r--. 1 jenkins jenkins 17634 Mar 23 07:27 deletedata.php
+-rwxr-xr-x. 1 jenkins jenkins 12552 Mar 23 07:27 donate-blood.css
+-rwxr-xr-x. 1 jenkins jenkins 22249 Mar 23 07:27 donate-blood.php
+-rwxr-xr-x. 1 jenkins jenkins 12499 Mar 23 07:27 find-donor.css
+-rwxr-xr-x. 1 jenkins jenkins 20646 Mar 23 07:27 find-donor.php
+-rwxr-xr-x. 1 jenkins jenkins 17978 Mar 23 07:27 home.css
+-rwxr-xr-x. 1 jenkins jenkins 28912 Mar 23 07:27 index.html
+-rwxr-xr-x. 1 jenkins jenkins  1613 Mar 23 07:27 index.php
+-rw-r--r--. 1 jenkins jenkins  1656 Mar 23 07:27 indexadmin.php
+drwxr-xr-x. 2 jenkins jenkins   104 Mar 23 07:27 manifests
+drwxr-xr-x. 6 jenkins jenkins    72 Mar 23 07:27 maps
+-rwxr-xr-x. 1 jenkins jenkins   160 Mar 23 07:27 package.json
+drwxr-xr-x. 3 jenkins jenkins    31 Mar 23 07:27 public
+-rwxr-xr-x. 1 jenkins jenkins 18845 Mar 23 07:27 search.php
+-rwxr-xr-x. 1 jenkins jenkins 19857 Mar 23 07:27 signup.php
+-rwxr-xr-x. 1 jenkins jenkins  5856 Mar 23 07:27 style.css
+-rwxr-xr-x. 1 jenkins jenkins   822 Mar 23 07:27 style2.css
+drwxr-xr-x. 2 jenkins jenkins    58 Mar 23 07:27 weightconverter
+[root@ip-172-31-33-227 MyDeployment]# 
+
+
+Now launch SONARQUBE Dashboard
+
+
+
+http://54.196.53.29:9000/ ----------------------> SONARQUBE Dashboard has been launched
+
+pipeline {
+    agent any
+    environment {
+        scannerHome = tool 'mysonar';
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/pranay-devops666/ltibbhackathon.git'
+            }
+        }
+        stage ("CAQ") {
+            steps {
+                withSonarQubeEnv("mysonar") {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+    }
+}
+
+save & Build
+
+Build Got Success
+
+
+Next step is lets discuss about QUALITY GATES  
+
+Actually in every Pipeline Quality Gates will be present that means we need to understand one logic here what it is means in CAQ Stage need to do scan the Code
+
+After done the Code scan we wiil get 2 outputs as one is Passed or second one is to get failed
+
+Now Incase if we get code pass in CAQ means the Image will get create but what if we got get failed means 
+
+Incase CAQ got failed means jenkins ki teliyadhu if it got pass or fail we will tell to jenkins only to scan the code in CAQ stage it  will do only scan the Code
+in CAQ Stage result output will not be responsible to jenkins evn it is pass or fail
+
+For that in next stage we will use QUALITY GATES 
+
+What QUALITY GATES will do is it will wait for the sonarqube status 
+
+we need to write the condition if it got fail 
+
+pipeline {
+    agent any
+    environment {
+        scannerHome = tool 'mysonar';
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/pranay-devops666/ltibbhackathon.git'
+            }
+        }
+        stage ("CAQ") {
+            steps {
+                withSonarQubeEnv("mysonar") {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage ("QualityGates") {
+            steps {
+                waitForQualityGate abortPipeline: false, credentialsId: 'mysonar'
+            }
+        }
+    }
+}
+
+save & Build
+
+Build Got Success
+
+Befor going to Build this above Job we need to get Integrate the webhooks for thhe pipeline Job
+
+Integrate the webhooks which present in Sonarqube----------> go to sonarqube dashboard-----------> select my account----------> select projects-------> select what 
+we created the project-----------> select project settings----------> select webhooks ---------> create name:jenkins-integration------> url:http://54.196.53.29:8080/sonarqube-webhook/
+--------> create ------> ok
+
+ehh webhook untene manaku pipeline job lo Quality Gates enable avtai if not means it doesn't enable
+
+
+pipeline {
+    agent any
+    environment {
+        scannerHome = tool 'mysonar';
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/pranay-devops666/ltibbhackathon.git'
+            }
+        }
+        stage ("CAQ") {
+            steps {
+                withSonarQubeEnv("mysonar") {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage ("QualityGates") {
+            steps {
+                waitForQualityGate abortPipeline: false, credentialsId: 'mysonar'
+            }
+        }
+    }
+}
+
+save & Build
+
+Build Got Success
+
+
+
+Next Stage is to create Docker Image
+
+So, for our application we have 2 Docker files 1.For Application 2. For Database
+
+we need to build that Docker files 
+
+Now we will do Build Application Image + Database Image
+
+
+Before going to build the below Job pipeline 
+
+Give permissions like below
+
+[root@ip-172-31-33-227 ~]# chmod 777 /var/run/docker.sock -------------------------------------->
+[root@ip-172-31-33-227 ~]# 
+
+
+Now Build the Job
+
+pipeline {
+    agent any
+    environment {
+        scannerHome = tool 'mysonar';
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/pranay-devops666/ltibbhackathon.git'
+            }
+        }
+        stage ("CAQ") {
+            steps {
+                withSonarQubeEnv("mysonar") {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage ("QualityGates") {
+            steps {
+                waitForQualityGate abortPipeline: false, credentialsId: 'mysonar'
+            }
+        }
+        stage ("Images") {
+            steps {
+                sh 'docker build -t dbimage database'
+                sh 'docker build -t appimage .'
+            }
+        }
+    }
+}
+
+save & Build
+
+Build Got Success
+
+Next stage is to scan the Images through Trivy
+
+[root@ip-172-31-33-227 ~]# trivy --version -------------------------------------->
+Version: 0.69.3
+[root@ip-172-31-33-227 ~]#
+
+pipeline {
+    agent any
+    environment {
+        scannerHome = tool 'mysonar';
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/pranay-devops666/ltibbhackathon.git'
+            }
+        }
+        stage ("CAQ") {
+            steps {
+                withSonarQubeEnv("mysonar") {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage ("QualityGates") {
+            steps {
+                waitForQualityGate abortPipeline: false, credentialsId: 'mysonar'
+            }
+        }
+        stage ("Images") {
+            steps {
+                sh 'docker build -t dbimage database'
+                sh 'docker build -t appimage .'
+            }
+        }
+        stage ("ImageScan") {
+            steps {
+                sh 'trivy image dbimage'
+                sh 'trivy image appimage'
+            }
+        }
+    }
+}
+
+save & Build
+
+Build Got Success
+
+Next need to Push DockerHub for need to push DockerHub we need a plugin called Docker pipeline
+
+we need to Tag the Image in this stage
+
+lets Tag it
+
+pipeline {
+    agent any
+    environment {
+        scannerHome = tool 'mysonar';
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/pranay-devops666/ltibbhackathon.git'
+            }
+        }
+        stage ("CAQ") {
+            steps {
+                withSonarQubeEnv("mysonar") {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage ("QualityGates") {
+            steps {
+                waitForQualityGate abortPipeline: false, credentialsId: 'mysonar'
+            }
+        }
+        stage ("Images") {
+            steps {
+                sh 'docker build -t dbimage database'
+                sh 'docker build -t appimage .'
+            }
+        }
+        stage ("ImageScan") {
+            steps {
+                sh 'trivy image dbimage'
+                sh 'trivy image appimage'
+            }
+        }
+        stage ("Tag") {
+            steps {
+                sh 'docker tag dbimage pranay419/bloodyapp:dbimage'
+                sh 'docker tag appimage pranay419/bloodyapp:appimage'
+            }
+        }
+        stage ("Push") {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'dockerhub') {
+                        sh 'docker push pranay419/bloodyapp:dbimage'
+                        sh 'docker push pranay419/bloodyapp:appimage'
+                    }    
+                }
+            }
+        }
+    }
+}
+
+
+save & Build
+
+Incase for the above pipeline job if we got an error means follow below steps
+
+===============================================================================================================================================================================================================================================
+
+✅ Fix in ONE simple step
+
+👉 Create Docker Hub credentials in Jenkins with ID dockerhub
+
+Do this:
+Go to Jenkins Dashboard
+Click Manage Jenkins → Manage Credentials
+Select (global)
+Click Add Credentials
+Choose:
+Kind: Username with password
+Username: your Docker Hub username (e.g., pranay419)
+Password: your Docker Hub password or access token
+ID: dockerhub ✅ (VERY IMPORTANT — must match pipeline)
+Click Save
+
+===============================================================================================================================================================================================================================================
+
+Build Got Success
+
+Successfully the two Images dbimage & appimage got pushed into a DockerHub 
+
+Now we need to test this application is working fine or not by using containers 
+
+
+pipeline {
+    agent any
+    environment {
+        scannerHome = tool 'mysonar';
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/pranay-devops666/ltibbhackathon.git'
+            }
+        }
+        stage ("CAQ") {
+            steps {
+                withSonarQubeEnv("mysonar") {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage ("QualityGates") {
+            steps {
+                waitForQualityGate abortPipeline: false, credentialsId: 'mysonar'
+            }
+        }
+        stage ("Images") {
+            steps {
+                sh 'docker build -t dbimage database'
+                sh 'docker build -t appimage .'
+            }
+        }
+        stage ("ImageScan") {
+            steps {
+                sh 'trivy image dbimage'
+                sh 'trivy image appimage'
+            }
+        }
+        stage ("Tag") {
+            steps {
+                sh 'docker tag dbimage pranay419/bloodyapp:dbimage'
+                sh 'docker tag appimage pranay419/bloodyapp:appimage'
+            }
+        }
+        stage ("Push") {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'dockerhub') {
+                        sh 'docker push pranay419/bloodyapp:dbimage'
+                        sh 'docker push pranay419/bloodyapp:appimage'
+                    }    
+                }
+            }
+        }
+        stage ("Deploy") {
+            steps {
+                sh 'docker run -itd --name mysqldb -p 3306:3306 pranay419/bloodyapp:dbimage'
+                sh 'docker run -itd --name appcont -p 1111:80 --link mysqldb:mysqlcon pranay419/bloodyapp:appimage'
+            }
+        }
+    }
+}
+
+save & Build
+
+Build Got Success
+
+
+
+[root@ip-172-31-33-227 ~]# docker ps -------------------------------------->
+CONTAINER ID   IMAGE                          COMMAND                  CREATED          STATUS          PORTS                                       NAMES
+948a326af496   pranay419/bloodyapp:appimage   "docker-php-entrypoi…"   34 minutes ago   Up 34 minutes   0.0.0.0:1111->80/tcp, :::1111->80/tcp       appcont
+11b6723b19d0   sonarqube:lts-community        "/opt/sonarqube/dock…"   3 hours ago      Up 3 hours      0.0.0.0:9000->9000/tcp, :::9000->9000/tcp   sonar
+
+Now try to access the application with ec2-instance IP with port number 1111 like below
+
+http://54.196.53.29:1111/
+
+=====================================================================================================================================================================================================================================================================
+
+NOTE: FOR SUPPOSE IF WE GOT ANY ERROR LIKE BELOW FOLLOWING STEPS ARE BELOW
+=============================================================================
+
+https://chatgpt.com/c/69c10dd6-cf34-8324-ab0a-5b9e6b629108
+
+The error in your screenshot is:
+
+mysqli_connect(): (HY000/2002): No route to host
+Connection failed: No route to host
+What this means (very simple):
+
+Your app container cannot reach the MySQL container over the network.
+
+✅ Root Cause
+
+You used:
+
+--link mysqldb:mysqlcon
+
+But inside your PHP config (config.php), the hostname is likely not mysqlcon, or networking is not resolving properly.
+
+✅ One-Step Fix (simplest and correct way)
+
+Instead of using --link (deprecated), run both containers in the same Docker network.
+
+🔥 Just do this:
+docker network create mynet
+
+Then run containers like this:
+
+docker run -d --name mysqldb --network mynet -p 3306:3306 pranay419/bloodyapp:dbimage
+
+docker run -d --name appcont --network mynet -p 1111:80 pranay419/bloodyapp:appimage
+✅ Important (VERY IMPORTANT)
+
+In your config.php, set DB host as:
+
+$host = "mysqldb";
+
+👉 Because Docker automatically resolves container names as hostnames inside the same network.
+
+🎯 Final Result
+App connects to DB correctly
+No “No route to host” error
+Your app will open on:
+http://<IP>:1111
+
+Do it inside your Jenkins pipeline ✅ (not manually on EC2).
+
+✅ Single Step Fix (what you should change)
+
+Just update your Deploy stage like this:
+
+stage ("Deploy") {
+    steps {
+        sh 'docker network create mynet || true'
+        sh 'docker run -d --name mysqldb --network mynet -p 3306:3306 pranay419/bloodyapp:dbimage'
+        sh 'docker run -d --name appcont --network mynet -p 1111:80 pranay419/bloodyapp:appimage'
+    }
+}
+🎯 Why this works
+Jenkins runs on your EC2 → so it executes Docker commands there
+Network gets created automatically during pipeline run
+Containers can talk using mysqldb hostname
+⚠️ Small but important
+
+Make sure in your PHP config.php:
+
+$host = "mysqldb";
+🚀 Result
+No manual work needed
+Fully automated deployment
+Error will be fixed
+
+❌ Error meaning
+Conflict. The container name "/mysqldb" is already in use
+
+👉 This means your previous pipeline run already created a container named mysqldb, and Docker doesn’t allow duplicate names.
+
+✅ One-Step Fix (clean + run)
+
+Just remove old containers before running new ones in your Deploy stage:
+
+stage ("Deploy") {
+    steps {
+        sh 'docker rm -f mysqldb appcont || true'
+        sh 'docker network create mynet || true'
+        sh 'docker run -d --name mysqldb --network mynet -p 3306:3306 pranay419/bloodyapp:dbimage'
+        sh 'docker run -d --name appcont --network mynet -p 1111:80 pranay419/bloodyapp:appimage'
+    }
+}
+🎯 Why this works
+docker rm -f → deletes old containers if they exist
+|| true → prevents pipeline failure if they don’t exist
+Fresh containers start every time → no conflict
+🚀 Result
+Pipeline will not fail
+Containers recreated cleanly
+Your app will connect to DB without issues
+
+❌ Error
+unexpected token: } @ line 62
+
+👉 This means your curly braces {} are mismatched (extra } at the end of pipeline).
+
+✅ One-Step Fix
+
+You just need to remove one extra closing brace } at the end.
+
+✔️ Corrected Pipeline (fixed)
+pipeline {
+    agent any
+    environment {
+        scannerHome = tool 'mysonar';
+    }
+    stages {
+        stage ("Code") {
+            steps {
+                git 'https://github.com/pranay-devops666/ltibbhackathon.git'
+            }
+        }
+        stage ("CAQ") {
+            steps {
+                withSonarQubeEnv("mysonar") {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage ("QualityGates") {
+            steps {
+                waitForQualityGate abortPipeline: false, credentialsId: 'mysonar'
+            }
+        }
+        stage ("Images") {
+            steps {
+                sh 'docker build -t dbimage database'
+                sh 'docker build -t appimage .'
+            }
+        }
+        stage ("ImageScan") {
+            steps {
+                sh 'trivy image dbimage'
+                sh 'trivy image appimage'
+            }
+        }
+        stage ("Tag") {
+            steps {
+                sh 'docker tag dbimage pranay419/bloodyapp:dbimage'
+                sh 'docker tag appimage pranay419/bloodyapp:appimage'
+            }
+        }
+        stage ("Push") {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'dockerhub') {
+                        sh 'docker push pranay419/bloodyapp:dbimage'
+                        sh 'docker push pranay419/bloodyapp:appimage'
+                    }    
+                }
+            }
+        }
+        stage ("Deploy") {
+            steps {
+                sh 'docker rm -f mysqldb appcont || true'
+                sh 'docker network create mynet || true'
+                sh 'docker run -d --name mysqldb --network mynet -p 3306:3306 pranay419/bloodyapp:dbimage'
+                sh 'docker run -d --name appcont --network mynet -p 1111:80 pranay419/bloodyapp:appimage'
+            }
+        }
+    }
+}
+
+save & Build
+
+Build Got Success
+
+Now able to access the application
+
+=====================================================================================================================================================================================================================================================================
+
+
+http://54.196.53.29:1111/ ------------------> in here we will see login page
+
+http://54.196.53.29:1111/index.html  ------------------> in here we will see create an account
+
+Now we need to check created new account stored in dbcontainer or not 
+
+[root@ip-172-31-33-227 ~]# docker ps -------------------------------------->
+CONTAINER ID   IMAGE                          COMMAND                  CREATED          STATUS                    PORTS                                                  NAMES
+6443386853f5   pranay419/bloodyapp:appimage   "docker-php-entrypoi…"   10 minutes ago   Up 10 minutes             0.0.0.0:1111->80/tcp, :::1111->80/tcp                  appcont
+8d55dd460ff0   pranay419/bloodyapp:dbimage    "/entrypoint.sh mysq…"   10 minutes ago   Up 10 minutes (healthy)   0.0.0.0:3306->3306/tcp, :::3306->3306/tcp, 33060/tcp   mysqldb
+11b6723b19d0   sonarqube:lts-community        "/opt/sonarqube/dock…"   3 hours ago      Up 3 hours                0.0.0.0:9000->9000/tcp, :::9000->9000/tcp              sonar
+[root@ip-172-31-33-227 ~]# docker exec -it mysqldb -- bash -------------------------------------->
+OCI runtime exec failed: exec failed: unable to start container process: exec: "--": executable file not found in $PATH: unknown
+[root@ip-172-31-33-227 ~]# docker exec -it mysqldb bash
+bash-4.2# 
+bash-4.2# mysql -u root -p -------------------------------------->
+Enter password: admin123 -------------------------------------->
+Welcome to the MySQL monitor.  Commands end with ; or \g.
+Your MySQL connection id is 30
+Server version: 5.7.41 MySQL Community Server (GPL)
+
+Copyright (c) 2000, 2023, Oracle and/or its affiliates.
+
+Oracle is a registered trademark of Oracle Corporation and/or its
+affiliates. Other names may be trademarks of their respective
+owners.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> show databases; -------------------------------------->
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| customers          |
+| mysql              |
+| performance_schema |
+| sys                |
++--------------------+
+5 rows in set (0.00 sec)
+
+mysql> use customers; -------------------------------------->
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql> show tables; -------------------------------------->
++---------------------+
+| Tables_in_customers |
++---------------------+
+| donors              |
+| users               |
++---------------------+
+2 rows in set (0.01 sec)
+
+mysql> select * from users; -------------------------------------->
++-----------+-------------------+---------------+
+| username  | name              | password      |
++-----------+-------------------+---------------+
+| yssyogesh | Yogesh Singh      | 12345         |
+| bsonarika | Sonarika Bhadoria | 12345         |
+| vishal    | Vishal Sahu       | 12345         |
+| prashanth | Prashanth Katkam  | 12345         |
+| vijay     | Vijay mourya      | 12345         |
+| pranay    | Pranay            | Pranay%401409 |
++-----------+-------------------+---------------+
+6 rows in set (0.00 sec)
+mysql> select * from donors; -------------------------------------->
++----+-----------+----------+------------+-----------+------------+------------+------------+------------+
+| id | fname     | lname    | mobileno   | city      | bfrom      | bto        | dob        | bloodgroup |
++----+-----------+----------+------------+-----------+------------+------------+------------+------------+
+|  1 | Srikanth  | Koraveni | 9000736060 | Pune      | 2022-09-28 | 2022-12-28 | 1998-05-22 | O_Positive |
+|  2 | Prashanth | Katkam   | 7989919097 | Mumbai    | 2022-09-17 | 2022-11-18 | 1998-09-30 | O_Positive |
+|  3 | Kranthi   | Khaitha  | 9876789871 | Bangalore | 2022-09-16 | 2022-11-08 | 1996-07-02 | B_Positive |
+|  4 | Srinivas  | Thota    | 9812789411 | Mumbai    | 2022-09-18 | 2022-10-31 | 1992-07-22 | O_Positive |
+|  5 | Pandya    | Loka     | 9877787887 | Mumbai    | 2022-09-18 | 2022-10-09 | 1992-07-22 | B_Positive |
+|  6 | Prajodh   | Shreya   | 9812444411 | Mumbai    | 2022-08-23 | 2022-10-31 | 1992-07-22 | B_Positive |
+|  7 | Srinivas  | Thota    | 9812723411 | Mumbai    | 2022-04-19 | 2022-10-07 | 1992-07-22 | B_Positive |
+|  8 | Zaheer    | Khan     | 7788678987 | Chennai   | 2022-09-11 | 2022-12-19 | 1998-11-11 | A_Positive |
++----+-----------+----------+------------+-----------+------------+------------+------------+------------+
+8 rows in set (0.00 sec)
+
+mysql> -------------------------------------->
+
+those above all are default donors
+
+As of now we done deployed the application with Docker upto now Drawback is there is no rollback option, no high availability, no scaling options 
+
+Now For entire whole application if i want High availability feature, rollback & scaling options, or upgrate in future we will use Kubernetes
+
+To take this application to Kubernetes what we will nedd ?
+
+1. need cluster 2. to run an application i need deployment 3. for databases need statefulset 4. In inside the data will be store always available in the database means
+we need volumes 5. to expose the database and statefulset we need service 6. for suppose deployment is there suddenly got huge traffic need to be increase pods automatically
+if traffic is less means need to decrease the no.of pods for that we need HPA to work HPA properly we need to install metric server, configmaps, secrets
+
+(for database we will give credentials instead of doing that need to be inject to a pod directly what we need to do is ? we need to pass secrets)
+
+need to give some configurations values means we will need to create configmaps
+
+to need to isolate releted to the whole application is need namespace
+
+for every pod need to be use some contain of cpu, some contain of memory need to provide quality of servive means we will use resource quota
+
+need to be communicate one service to another particular service and no need to communicate another service in such situation for the security perception 
+we will use network policies
+
+need ingress to route the traffic and do terminate ssl means we need Ingress
+to know the container is healthy or not incase in healthy means it is taking the traffic or not we will use probes 
+
+to monitor the whole application after the deployment we will use prometheus and grafana
+
+Now we need to write Manifest files and need to be create an cluster 
+
+Firstwe will create a cluster with kops & later we will do EKS
+
+lets start with kops
+=====================================================================================================================================================================================================================================================================
+
+yum install docker -y & systemctl start docker ------------> command to install & start docker -------------------------------------->
+
+install kubectl
+
+installe kubectl
+
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" -------------------------------------->
+
+
+chmod +x kubectl -------------------------------------->
+
+mv kubectl /usr/local/bin/ -------------------------------------->
+
+
+install minikube as well
+
+install minikube-------> select https://minikube.sigs.k8s.io › docs › start------>start minikube--------->in here the details will be there
+
+What you’ll need
+2 CPUs or more
+2GB of free memory
+20GB of free disk space
+Internet connection
+
+curl -LO https://github.com/kubernetes/minikube/releases/latest/download/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube && rm minikube-linux-amd64 -------------------------------------->
+
+minikube version -------------------------------------->
+
+minikube status -------------------------------------->
+
+minikube start --driver=docker -------------------------------------->
+
+minikube start --driver=docker --force -------------------------------------->
+
+minikube status -------------------------------------->
+
+[root@ip-172-31-25-132 ~]# minikube status -------------------------------------->
+minikube
+type: Control Plane
+host: Running
+kubelet: Running
+apiserver: Running
+kubeconfig: Configure
+
+now create a cluster
+
+aws s3 ls -------------------------------------->
+
+aws s3 mb s3://jaisri.2026.ram -------------------------------------->
+
+kops create cluster --name srirama.k8s.local --zones us-east-1a,us-east-1b --master-size c7i-flex.large --master-volume-size 30 --node-count 2 
+--node-volume-size 20 --node-size t3.micro --image=ami-0b6c6ebed2801a5cb -------------------------------------->
+
+kops delete cluster --name babu.k8s.local --yes -----------------> command to delete the cluster
+
+
+
+
+Suggestions:
+===================
+
+
+ * list clusters with: kops get cluster
+ * edit this cluster with: kops edit cluster rama.k8s.local
+ * edit your node instance group: kops edit ig --name=rama.k8s.local nodes-us-east-1a
+ * edit your control-plane instance group: kops edit ig --name=rama.k8s.local control-plane-us-east-1a
+
+Finally configure your cluster with: kops update cluster --name rama.k8s.local --yes --admin
+
+
+
+Suggestions:
+ * validate cluster: kops validate cluster --wait 10m
+ * list nodes: kubectl get nodes --show-labels
+ * ssh to a control-plane node: ssh -i ~/.ssh/id_rsa ubuntu@
+ * the ubuntu user is specific to Ubuntu. If not using Ubuntu please use the appropriate user based on your OS.
+ * read about installing addons at: https://kops.sigs.k8s.io/addons.
+
+=====================================================================================================================================================================================================================================================================
+
+
+[root@ip-172-31-33-227 ~]# aws s3 ls -------------------------------------->
+2026-03-17 05:39:11 jaisri.2026.ram -------------------------------------->
+[root@ip-172-31-33-227 ~]# curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" -------------------------------------->
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 57228k 100 57228k   0     0 279.5M     0  --:--:-- --:--:-- --:--:-- 279.4M
+[root@ip-172-31-33-227 ~]# ll
+total 57244
+-rw-r--r--. 1 root root     9945 Mar 23 07:23 install.sh
+-rw-r--r--. 1 root root 58601656 Mar 23 10:51 kubectl
+[root@ip-172-31-33-227 ~]# chmod +x kubectl  -------------------------------------->
+[root@ip-172-31-33-227 ~]# ll
+total 57244
+-rw-r--r--. 1 root root     9945 Mar 23 07:23 install.sh
+-rwxr-xr-x. 1 root root 58601656 Mar 23 10:51 kubectl
+[root@ip-172-31-33-227 ~]# mv kubectl /usr/local/bin/
+[root@ip-172-31-33-227 ~]# ll
+total 12
+-rw-r--r--. 1 root root 9945 Mar 23 07:23 install.sh
+[root@ip-172-31-33-227 ~]# curl -Lo kops https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | grep tag_name | cut -d '"' -f 4)/kops-linux-amd64
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0   0     0   0     0     0     0  --:--:-- --:--:-- --:--:--     0
+100 256.8M 100 256.8M   0     0 416.0M     0  --:--:-- --:--:-- --:--:-- 516.8M
+[root@ip-172-31-33-227 ~]# chmod +x kops -------------------------------------->
+[root@ip-172-31-33-227 ~]# sudo mv kops /usr/local/bin/kops -------------------------------------->
+[root@ip-172-31-33-227 ~]# ll
+total 12
+-rw-r--r--. 1 root root 9945 Mar 23 07:23 install.sh
+[root@ip-172-31-33-227 ~]# 
+
+[root@ip-172-31-33-227 ~]# aws s3 ls -------------------------------------->
+2026-03-17 05:39:11 jaisri.2026.ram
+[root@ip-172-31-33-227 ~]# export KOPS_STATE_STORE=s3://jaisri.2026.ram -------------------------------------->
+[root@ip-172-31-33-227 ~]# kops create cluster --name srirama.k8s.local --zones us-east-1a,us-east-1b --master-count 1 --master-size m7i-flex.large 
+--master-volume-size 30 --node-count 3 --node-size c7i-flex.large --node-volume-size 30 --image=ami-0ec10929233384c7f -------------------------------------->
+[root@ip-172-31-33-227 ~]#kops update cluster --name srirama.k8s.local --yes --admin -------------------------------------->
+
+[root@ip-172-31-33-227 ~]# kops get cluster -------------------------------------->
+NAME                    CLOUD   ZONES
+srirama.k8s.local       aws     us-east-1a,us-east-1b
+
+[root@ip-172-31-33-227 ~]# kubectl get nodes -------------------------------------->
+NAME                  STATUS   ROLES           AGE     VERSION
+i-0631bb18df5004399   Ready    node            2m38s   v1.35.2
+i-08e375037d5cec193   Ready    control-plane   3m32s   v1.35.2
+i-09b9301d564bdb4ad   Ready    node            2m22s   v1.35.2
+i-0cdc1449c02556331   Ready    node            2m38s   v1.35.2
+[root@ip-172-31-33-227 ~]# 
+
+For Manifest file we need
+1. ResourceQuota 2.Configmaps 3. Secrets 4. Deployment 5. HPA  6.App-Service  7.statefulset  8.db-service  9.Ingress  10.Network Polocies  11.pdb
+
+vim secret.yml
+vim configmap.yml
+vim resource-quota.yml
+vim deploy.yml
+vim hpa.yml
+vim statefulset.yml
+vim app-svc.yml
+vim db-svc.yml
+vim ingress.yml
+vim networkpolicy.yml
+vim pdb.yml
+
+
+Total 11 yaml manifestation files
+
+
+
+
+mkdir pranay -------------------------------------->
+cd pranay/ -------------------------------------->
+
+echo -n "root" | base64 --------------------------------------> enter
+cm9vdA==
+
+
+echo -n "admin123" | base64 --------------------------------------> enter
+YWRtaW4xMjM=
+
+vim secrets.yml -------------------------------------->
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: bankapp-db-secret
+type: Opaque
+data:
+  DB_USER: cm9vdA==
+  DB_PASSWORD: YWRtaW4xMjM=
+
+:wq
+
+vim configmaps.yml -------------------------------------->
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bankapp-config
+data:
+  DB_HOST: bankapp-db-service
+  DB_PORT: "3306"
+
+:wq
+
+vim resource-quota.yml -------------------------------------->
+
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: bankapp-quota
+spec:
+  hard:
+    pods: "10"
+    requests.cpu: "2"
+    requests.memory: 2Gi
+    limits.cpu: "4"
+    limits.memory: 4Gi
+
+:wq
+
+
+vim deployment.yml -------------------------------------->
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bankapp-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: bankapp
+  template:
+    metadata:
+      labels:
+        app: bankapp
+    spec:
+      containers:
+        - name: bankapp-container
+          image: pranay419/bloodyapp:appimage
+          ports:
+            - containerPort: 80
+
+          envFrom:
+            - configMapRef:
+                name: bankapp-config
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 60
+            periodSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 60
+            periodSeconds: 10
+:wq
+
+
+vim hpa.yml -------------------------------------->
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: bankapp-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: bankapp-deployment
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50
+:wq
+
+
+vim statefulset.yml -------------------------------------->
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: bankapp-statefulset
+spec:
+  serviceName: bankapp-db-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bankapp-db
+  template:
+    metadata:
+      labels:
+        app: bankapp-db
+    spec:
+      containers:
+        - name: db-container
+          image: pranay419/bloodyapp:dbimage
+          ports:
+            - containerPort: 3306
+
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: root123
+
+          envFrom:
+            - secretRef:
+                name: bankapp-db-secret
+            - configMapRef:
+                name: bankapp-config
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+
+          volumeMounts:
+            - name: mysql-persistent-storage
+              mountPath: /var/lib/mysql
+
+  volumeClaimTemplates:
+    - metadata:
+        name: mysql-persistent-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi
+
+:wq
+
+
+vim app-service.yml -------------------------------------->
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bankapp-service
+spec:
+  selector:
+    app: bankapp
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
+
+:wq
+
+vim db-svc.yml
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bankapp-db-service
+spec:
+  clusterIP: None
+  selector:
+    app: bankapp-db
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306
+:wq
+
+vim ingress.yml
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bankapp-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: bankapp-service
+                port:
+                  number: 80
+:wq
+
+vim networkpolicy.yml -------------------------------------->
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bankapp-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: bankapp
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 80
+
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: bankapp-db
+      ports:
+        - protocol: TCP
+          port: 3306
+
+
+:wq
+
+vim pdb.yml -------------------------------------->
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: bankapp-pdb
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: bankapp
+
+
+:wq
+
+
+kubectl apply -f .------------------------->
+
+vim secret.yml
+vim configmap.yml
+vim resource-quota.yml
+vim deploy.yml
+vim hpa.yml
+vim statefulset.yml
+vim app-svc.yml
+vim db-svc.yml
+vim ingress.yml
+vim networkpolicy.yml
+vim pdb.yml
+
+[root@ip-172-31-27-27 pranay]# vim secrets.yml
+[root@ip-172-31-27-27 pranay]# vim configmap.yml
+[root@ip-172-31-27-27 pranay]# vim configmap.yml
+[root@ip-172-31-27-27 pranay]# vim resource-quota.yml
+[root@ip-172-31-27-27 pranay]# vim resource-quota.yml
+[root@ip-172-31-27-27 pranay]# vim deployment.yml
+[root@ip-172-31-27-27 pranay]# vim hpa.yml
+[root@ip-172-31-27-27 pranay]# vim hpa.yml
+[root@ip-172-31-27-27 pranay]# vim statefulset.yml
+[root@ip-172-31-27-27 pranay]# vim app-service.yml
+[root@ip-172-31-27-27 pranay]# vim db-svc.yml
+[root@ip-172-31-27-27 pranay]# vim ingress.yml
+[root@ip-172-31-27-27 pranay]# vim networkpolicy.yml
+[root@ip-172-31-27-27 pranay]# vim pdb.yml
+[root@ip-172-31-27-27 pranay]# kubectl apply -f .
+service/bankapp-service created
+configmap/bankapp-config created
+service/bankapp-db-service created
+deployment.apps/bankapp-deployment created
+horizontalpodautoscaler.autoscaling/bankapp-hpa created
+ingress.networking.k8s.io/bankapp-ingress created
+networkpolicy.networking.k8s.io/bankapp-network-policy created
+poddisruptionbudget.policy/bankapp-pdb created
+resourcequota/bankapp-quota created
+secret/bankapp-db-secret created
+statefulset.apps/bankapp-statefulset created
+[root@ip-172-31-27-27 pranay]# 
+
+
+Total 11 yaml manifestation files
+
+
+
+kubectl apply -f .------------------------->
+
+
+
+https://github.com/pranay-devops666/ltibbhackathon.git --------------> this repo is related to application
+
+https://github.com/pranay-devops666/bankapp-manifestfiles.git --------------> this repo is related to manifest files
+
+[root@ip-172-31-27-27 pranay]# kubectl get deploy
+NAME                 READY   UP-TO-DATE   AVAILABLE   AGE
+bankapp-deployment   0/3     3            0           4m46s
+
+[root@ip-172-31-27-27 pranay]# kubectl get deploy
+NAME                 READY   UP-TO-DATE   AVAILABLE   AGE
+bankapp-deployment   0/3     3            0           4m46s
+[root@ip-172-31-27-27 pranay]# kubectl get po
+NAME                                  READY   STATUS             RESTARTS       AGE
+bankapp-deployment-67bbdfd4d7-g4spd   0/1     CrashLoopBackOff   5 (45s ago)    5m18s
+bankapp-deployment-67bbdfd4d7-mrgm7   0/1     CrashLoopBackOff   5 (45s ago)    5m18s
+bankapp-deployment-67bbdfd4d7-pvczm   0/1     CrashLoopBackOff   5 (40s ago)    5m18s
+bankapp-statefulset-0                 0/1     CrashLoopBackOff   5 (2m8s ago)   5m18s
+[root@ip-172-31-27-27 pranay]# 
+
+Here got an error as CrashLoopBackOff 
+
+Need to do troubleshoot steps here 
+
+
+https://chatgpt.com/c/69c54d72-750c-8324-a04c-5e01440d47c9
+
+
+
+
+
