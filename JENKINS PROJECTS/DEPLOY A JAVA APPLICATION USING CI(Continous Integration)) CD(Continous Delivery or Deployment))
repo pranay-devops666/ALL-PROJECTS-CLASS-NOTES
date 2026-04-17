@@ -1,0 +1,415 @@
+Jenkins Class -04
+======================
+
+TOPIC: DEPLOY A JAVA APPLICATION USING CI/CD
+===============================================
+
+
+https://devops-cicd.hashnode.dev/deploy-a-java-application-using-jenkins
+
+Imp links : 
+=============
+app code link : https://github.com/devops0014/one.git
+scripts link : https://github.com/devops0014/all-setups.git
+tomcat verison link : https://dlcdn.apache.org/
+
+
+TOPIC: DEPLOY A JAVA APPLICATION USING CI/CD
+===============================================
+
+Introduction
+=============
+In today’s fast-paced software development world, Continuous Integration and Continuous Deployment (CI/CD) streamline application delivery. 
+In this blog, we’ll discuss how to deploy a Java-based application to an Apache Tomcat server using a CI/CD pipeline. 
+We'll use Jenkins for automation, Maven for build management, and Git for version control.
+
+Understanding the Tools
+=========================
+1. Git: Stores your application code and tracks changes.
+
+2. Maven: Builds and manages Java projects by handling dependencies.
+
+3. Jenkins: Automates the CI/CD process by integrating code building, testing, and deployment.
+
+4. Tomcat: A popular server for hosting Java-based applications.
+
+
+        CODE
+          |
+          v
+       (GitHub)
+          |
+          v
+       INTEGRATE
+          |
+          v
+        (Jenkins)
+          |
+          | -------- BUILD -------->
+          |                         |
+          | <-------- WAR ----------|
+          |
+          v
+          WAR
+          |
+          v
+       (Tomcat Server)
+          |
+          v
+     Application Running
+
+
+Real-Time Scenario
+=====================
+Imagine a software team working on an e-commerce web application. Every time a developer updates the product catalog, they push the changes to GitHub. 
+Jenkins automatically:
+
+1. Pulls the updated code.
+
+2. Builds the application using Maven.
+
+3. Perform the unit test using Maven.
+
+4. Deploys the new version to Tomcat.
+
+This process minimizes manual effort and ensures the application is always up-to-date.
+
+Steps to Deploy a Java-Based Application Using CI/CD
+STEP-1: Launch 2 EC2 Instances (Kernel 5.10)
+
+Jenkins Server
+
+Tomcat Server
+
+
+
+
+
+STEP-2: Connect Jenkins server and Install Jenkins & GIT
+
+#STEP-1: INSTALLING GIT
+yum install git -y
+
+#STEP-2: GETTING THE REPO (jenkins.io --> download -- > redhat)
+sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+
+#STEP-3: DOWNLOAD JAVA17 AND JENKINS
+yum install java-17-amazon-corretto -y
+yum install jenkins -y
+
+#STEP-4: RESTARTING JENKINS (when we download service it will on stopped state)
+systemctl start jenkins.service
+systemctl status jenkins.service
+
+Now copy the public-ip of your system and access it with 8080 port.
+
+
+
+STEP-3: Now Install Deploy to container plugin
+
+Go to Manage Jenkins » Plugins » Available Plugins » Deploy to container
+
+
+
+STEP-4: Integrate Maven
+
+Go to Manage Jenkins » tools and select maven
+
+under the Maven Installations click on Add Maven
+
+Name: mymaven
+
+Version: default (3.9.9)
+
+
+
+Now click on save
+
+STEP-5: Create a Free Style Job
+
+
+
+Go to Source Code Management and select Git and enter the repo-url (https://github.com/usubbu/one.git)
+
+
+
+Go to Build Steps and select Invoke top-level Maven targets and select the Maven version as mymaven
+
+Now enter the goal as clean package
+
+
+
+Save the job and click on Build Now
+
+
+
+If the build gets success, go to workspace and open the target folder, we will get war file
+
+
+
+STEP-6: Deploy the application on Tomcat Server
+
+connect the tomcat server and run the script to setup tomcat
+
+Run the below script to setup tomcat
+
+amazon-linux-extras install java-openjdk11 -y
+wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.102/bin/apache-tomcat-9.0.102.tar.gz
+tar -zxvf apache-tomcat-9.0.102.tar.gz
+sed -i '56  a\<role rolename="manager-gui"/>' apache-tomcat-9.0.102/conf/tomcat-users.xml
+sed -i '57  a\<role rolename="manager-script"/>' apache-tomcat-9.0.102/conf/tomcat-users.xml
+sed -i '58  a\<user username="tomcat" password="admin@123" roles="manager-gui, manager-script"/>' apache-tomcat-9.0.102/conf/tomcat-users.xml
+sed -i '59  a\</tomcat-users>' apache-tomcat-9.0.102/conf/tomcat-users.xml
+sed -i '56d' apache-tomcat-9.0.102/conf/tomcat-users.xml
+sed -i '21d' apache-tomcat-9.0.102/webapps/manager/META-INF/context.xml
+sed -i '22d'  apache-tomcat-9.0.102/webapps/manager/META-INF/context.xml
+sh apache-tomcat-9.0.102/bin/startup.sh
+
+Remember the tomcat credentials
+
+username**:** tomcat
+
+password**:** admin@123
+
+If you wish to modify, change the credentials on above script also.
+
+Now access the tomcat dashboard with public-ip of tomcat server with 8080 port.
+
+
+
+Now go to Manager App and enter the credentials, You will get the Tomcat Web Application Manager dashboard.
+
+
+
+STEP-7: Integrate Tomcat with Jenkins
+
+Configure the Jenkins job and select Post Build Actions and select Deploy war/ear to a container
+
+WAR/EAR file: target/*.war
+
+context path: swiggy
+
+
+
+and click on add container and select Tomcat 9.x Remote
+
+
+
+Now add the tomcat credentials, click on Add select Jenkins
+
+
+
+Now click on Add and select the credentials and enter the tomcat url
+
+
+
+Now save the job and click on Build Now, If the build gets success then our application will be deployed on tomcat successfully.
+
+
+
+The build is success, Now lets refresh the tomcat page and we will see swiggy app is running
+
+
+
+Open the swiggy app and check the output.
+
+
+
+To automate the delivery process, we can also implement Webhooks!.
+
+Best Practices
+Use a separate staging environment for testing deployments before pushing to production.
+
+Automate testing as part of the CI/CD pipeline to catch bugs early.
+
+Secure your Jenkins and Tomcat configurations to prevent unauthorized access.
+
+Conclusion
+By automating deployment with CI/CD, you save time, reduce errors, and deliver features faster. 
+Deploying Java applications to Tomcat with tools like Jenkins and Maven is straightforward when done step-by-step. 
+Start building your pipeline today to experience the power of automation.
+
+If you love stories that inspire learning, growth, and productivity, consider subscribing for more! If this article added value to your journey, 
+your support would mean the world to me — only if it’s within your means. Let’s stay connected on LinkedIn too. Thank you for reading 💕
+
+
+
+
+Practical lets start here
+==============================
+
+Launch an Instance------. name:Jenkins------>kernel 6.1----------->c7i-flex-large---------> with keypair--------> jenkins security group-------> 10ebs ----> launch
+
+Launch and connect EC2-Instance
+
+do set-up jenkins dashboard like below
+
+sudo yum update –y
+sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+sudo yum upgrade
+sudo yum install java-17-amazon-corretto -y
+sudo yum install jenkins git -y
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+sudo systemctl status jenkins
+
+above all commands to set-up a Jenkins Dashboard
+
+CODE-------> BUILD ----------> TEST ---------> DEPLOY
+
+in Build 1. Code compile(execute)
+         2. Code Unit Test
+         3. Code Package
+
+Real-Time Scenario
+Imagine a software team working on an e-commerce web application. Every time a developer updates the product catalog, they push the changes to GitHub. Jenkins automatically:
+
+1. Pulls the updated code.
+
+2. Builds the application using Maven.
+
+3. Perform the unit test using Maven.
+
+4. Deploys the new version to Tomcat.
+
+This process minimizes manual effort and ensures the application is always up-to-date.
+
+Steps to Deploy a Java-Based Application Using CI/CD
+=====================================================
+
+
+STEP-1: Launch 2 EC2 Instances (Kernel 5.10)
+==============================================
+Jenkins Server
+
+Tomcat Server
+
+STEP-2: Connect Jenkins server and Install Jenkins & GIT
+==========================================================
+
+Now copy the public-ip of your system and access it with 8080 port.
+
+
+STEP-3: Now Install Deploy to container plugin
+================================================
+
+Go to Manage Jenkins » Plugins » Available Plugins » Deploy to container
+
+STEP-4: Integrate Maven
+
+Go to Manage Jenkins » tools and select maven
+
+under the Maven Installations click on Add Maven
+
+Name: mymaven
+
+Version: default (3.9.9)
+
+Now click on save
+
+STEP-5: Create a Free Style Job
+==================================
+
+Go to Source Code Management and select Git and enter the repo-url (https://github.com/usubbu/one.git)
+
+https://github.com/pranay-devops666/one.git
+
+Go to Build Steps and select Invoke top-level Maven targets and select the Maven version as mymaven
+
+Now enter the goal as clean package
+
+Save the job and click on Build Now
+
+If the build gets success, go to workspace and open the target folder, we will get war file
+
+
+
+STEP-6: Deploy the application on Tomcat Server
+===================================================
+
+Launch an Instance------. name:Tomcat------>kernel 6.1----------->c7i-flex-large---------> with keypair--------> jenkins security group-------> 10ebs ----> launch
+
+Launch and connect EC2-Instance
+
+do set-up Tomcat dashboard like below
+
+connect the tomcat server and run the script to setup tomcat
+
+Run the below script to setup tomcat
+
+vim tomcat.sh
+
+amazon-linux-extras install java-openjdk11 -y
+wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.102/bin/apache-tomcat-9.0.102.tar.gz
+tar -zxvf apache-tomcat-9.0.102.tar.gz
+sed -i '56  a\<role rolename="manager-gui"/>' apache-tomcat-9.0.102/conf/tomcat-users.xml
+sed -i '57  a\<role rolename="manager-script"/>' apache-tomcat-9.0.102/conf/tomcat-users.xml
+sed -i '58  a\<user username="tomcat" password="admin@123" roles="manager-gui, manager-script"/>' apache-tomcat-9.0.102/conf/tomcat-users.xml
+sed -i '59  a\</tomcat-users>' apache-tomcat-9.0.102/conf/tomcat-users.xml
+sed -i '56d' apache-tomcat-9.0.102/conf/tomcat-users.xml
+sed -i '21d' apache-tomcat-9.0.102/webapps/manager/META-INF/context.xml
+sed -i '22d'  apache-tomcat-9.0.102/webapps/manager/META-INF/context.xml
+sh apache-tomcat-9.0.102/bin/startup.sh
+
+:wq
+
+sh tomcat.sh
+
+Tomcat started.
+
+
+Remember the tomcat credentials
+
+username**:** tomcat
+
+password**:** admin@123
+
+If you wish to modify, change the credentials on above script also.
+
+Now access the tomcat dashboard with public-ip of tomcat server with 8080 port.
+
+Now go to Manager App and enter the credentials, You will get the Tomcat Web Application Manager dashboard.
+
+STEP-7: Integrate Tomcat with Jenkins
+=========================================
+
+Configure the Jenkins job and select Post Build Actions and select Deploy war/ear to a container
+
+WAR/EAR file: target/*.war
+
+context path: swiggy
+
+and click on add container and select Tomcat 9.x Remote
+
+Now add the tomcat credentials, click on Add select Jenkins
+
+Now click on Add and select the credentials and enter the tomcat url
+
+Now save the job and click on Build Now, If the build gets success then our application will be deployed on tomcat successfully.
+
+The build is success, Now lets refresh the tomcat page and we will see swiggy app is running
+
+Open the swiggy app and check the output.
+
+To automate the delivery process, we can also implement Webhooks!.
+
+Best Practices
+Use a separate staging environment for testing deployments before pushing to production.
+
+Automate testing as part of the CI/CD pipeline to catch bugs early.
+
+Secure your Jenkins and Tomcat configurations to prevent unauthorized access.
+
+Conclusion
+By automating deployment with CI/CD, you save time, reduce errors, and deliver features faster. 
+Deploying Java applications to Tomcat with tools like Jenkins and Maven is straightforward when done step-by-step. 
+Start building your pipeline today to experience the power of automation.
+
+If you love stories that inspire learning, growth, and productivity, consider subscribing for more! If this article added value to your journey, 
+your support would mean the world to me — only if it’s within your means. Let’s stay connected on LinkedIn too. Thank you for reading 💕
+
+
+
+
