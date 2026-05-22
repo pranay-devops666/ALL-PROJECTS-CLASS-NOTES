@@ -1,5 +1,143 @@
 KUBERNETES K8's PROJECT END TO END WITH EKS & TERRAFORM
 ==========================================================
 
-11 MICROSERVICES PROJECT
+K8S END TO END PROJECT WITH EKS & TERRAFORM
+================================================
+
+CLIENT REQUIREMENTS: Need Events Applications (people may login this application and conduct events or participate events as well)
+
+Architecture: login page/create an account(this details will store in database), event name, type, location, images, date & time
+
+For DataBase: using MongoDB
+
+For integrating Maps: using mapbox
+
+For storing images: Using Cloudinary
+
+
+Project Architecture:
+=========================
+
+dev wrote the code in locally
+containerize 
+In ci/cd stages are ------------> cqa----> owasp for node js app-----> image-----> scan --------> push--------> cont(app)
+Terraform: using terraform to create EKS cluster
+CI/CD ---------> getting code-------> owasp --------> image -----> scan --------> push -------> eks
+
+Tools Required:
+=================
+
+GIT, JENKINS, DOCKER, TERRAFORM, SONARQUBE, EKSCTL, AWSCLI, TRIVY, TFSEC(for security), Prometheus & Grafana (for monitoring tools)
+
+First Take and launch one EC2 Instance-------------> Name: My server-----> 6.1-----> m7i flex-large---------> with key pair-----> security group---------> 
+ebs volume 30 gb----------> attach IAM role ----------> and launch Instance
+
+First we need to Install JENKINS for need to develop pipeline
+
+sudo yum update –y
+sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+sudo yum upgrade
+sudo yum install java-21-amazon-corretto -y
+sudo yum install jenkins git -y
+sudo systemctl enable jenkins
+sudo systemctl start jenkins
+sudo systemctl status jenkins
+
+yum install docker -y && systemctl start docker
+
+[root@ip-172-31-25-107 ~]# chmod 777 /var/run/docker.sock
+
+Now need to create an account in mapbox go to below website
+
+https://www.mapbox.com/
+
+click get started for free and create an account for free
+
+Now need to create an account in cloudinary go to below website
+
+https://cloudinary.com/
+
+click get started for free and create an account for free
+
+https://console.cloudinary.com/app/    --------------> finaly created account for free
+
+select Api Keys----------> generate new Api Key--------> otp will get generate to our gmail----------> one new Api Key will get genearate
+
+copy that Api Key -----------> and paste in notepad and in fill in the bewlow
+
+CLOUDINARY_CLOUD_NAME=[Your Cloudinary Cloud Name]
+CLOUDINARY_KEY=[Your Cloudinary Key]
+CLOUDINARY_SECRET=[Your Cloudinary Secret]
+MAPBOX_TOKEN=[Your Mapbox Token]
+DB_URL=[Your MongoDB Atlas Connection URL]
+SECRET=[Your Chosen Secret Key] # This can be any value you prefer
+
+
+Now need to create an account in MangoDB go to below website
+
+https://www.mongodb.com/
+
+now here we need to create a cluster database
+
+click on create cluster------------> select free ---------> give cluster name---------> select aws----> select region--------> tags: application event app-------->
+click on create cluster -----------> over
+
+cluster has been created
+
+now need to do configurations for created cluster 
+select Add IP  Access ----------> Access List Entry: 0.0.0.0/0 Comment: this is my cluster db
+
+click on connect there will be a username & password we need to set this -----> choose a connection method---------> select drivesr------>select node js ----> done
+
+go to jenkins dashboard-------> 
+
+Setup Instructions
+To get this application up and running, you'll need to set up accounts with Cloudinary, Mapbox, and MongoDB Atlas. Once these are set up, create a .env file in the same folder as app.js. This file should contain the following configurations:
+
+CLOUDINARY_CLOUD_NAME=[Your Cloudinary Cloud Name]
+CLOUDINARY_KEY=[Your Cloudinary Key]
+CLOUDINARY_SECRET=[Your Cloudinary Secret]
+MAPBOX_TOKEN=[Your Mapbox Token]
+DB_URL=[Your MongoDB Atlas Connection URL]
+SECRET=[Your Chosen Secret Key] # This can be any value you prefer
+
+go to jenkins dashboard-------> do instal required plugins like pipeline stage view, sonarqube, docker pipeline & owasp--------> do install all these plugins
+
+go to github and take the take in main branch--------> https://github.com/pranay-devops666/3-Tier-Full-Stack-yelp-camp.git-------->
+
+create a job----------> job name--------> pipeline ---------> create
+
+take pipeline syntax like below
+
+pipeline{
+agent any
+
+  stages {
+      stage ('code') {
+          steps {
+              git branch: 'main', url: 'https://github.com/pranay-devops666/3-Tier-Full-Stack-yelp-camp.git'
+          }
+      }  
+  }
+}
+
+save and build
+
+next stage is CQA
+
+for CQA we need to create a container
+
+docker run -itd --name sonar -p 9000:9000 sonarqube:lts-community ---------------->
+
+access with port number 9000
+
+Go to sonarqube Dashboard---------> create a new project
+
+Go to Jenkins Dashboard and do configurations on system for sonarqube-----> go to manage jenkins -----------> select systems-------> and do configurations type
+secret text
+
+Go to Jenkins Dashboard and do configurations on tools for sonarqube
+
+
 
