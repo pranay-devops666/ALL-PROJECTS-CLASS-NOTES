@@ -1,0 +1,82 @@
+Understanding the Project
+In this project, we’re dealing with multiple applications, each with its own set of tasks managed through Pipeline jobs. These jobs include crucial steps like checking out, building, and deploying. My task is to transition these tasks into a more streamlined CI/CD pipeline, leveraging tools like Jenkins and AWS CodeDeploy for deployment.
+Technical Stack
+The project primarily revolves around Java-based applications. These applications are part of a larger ecosystem involving various teams, both internal and external. The applications are web-based, requiring access through a browser.
+Roles and Responsibilities
+In this project, my responsibilities include managing deployments, integrating Jira with Jenkins, and implementing DevOps metrics such as lead time and deployment frequency. Additionally, I’ve worked on integrating Apache Tomcat with Jenkins and GitHub to track commits, repositories, and deployment status.
+Experience and Expertise
+I’ve got 2.5 years of experience under my belt, with 2 years dedicated to DevOps. While I’m relatively new to cloud technologies, I’ve been actively learning and applying them in my current role.
+Pipeline Walkthrough
+* 		Checkout: This is where the source code is pulled from our GitLab repository. GitLab serves as our source code management platform.
+* 		Clean: This step involves clearing out any artifacts from previous builds to ensure a clean slate for the current build.
+* 		Build: Using Gradle, we compile and build the code, producing a web archive (WAR) file.
+* 		Integration Tests: We run integration tests using JUnit and generate test reports.
+* 		Compile Metrics and Archive Artifacts: This step involves metrics generation and archiving artifacts for future use.
+* 		Sonar Quality Gate: Here, we leverage SonarQube to analyze code quality and ensure it meets our defined standards. The build is aborted if it falls below the 80% code coverage threshold.
+* 		Static Code Analysis: We perform static code analysis using tools like JaCoCo to assess code coverage and identify potential issues.
+* 		Deployment: Depending on the environment (Dev, QA, etc.), we use Jenkins jobs with parameters to trigger the deployment process. The choice of environment is determined at this stage.
+* 		Deployment Strategies: We implement various deployment strategies like blue-green deployments, canary releases, and rolling updates, depending on the scenario.
+* 		Nexus Artifact Repository: We utilize Nexus as our repository manager for storing artifacts, differentiating between snapshot and release versions.
+* 		Email Notifications: We’ve set up email notifications to inform the team about the status of deployments, whether they’re successful or not.
+
+
+
+ 
+1. DAY TO DAY ACTIVITIES OF A DEVOPS ENGINEER.
+
+I have been working as a devops engineer from last 3 years.
+And coming to my day to day activities, We are implementing Agile methodology to track everything with the help of jira 
+
+Firstly we have to make sure that the pipeline is running smoothly
+If we found any issues we need to spend time troubleshooting, analysing and providing fixes to issues.
+
+Interaction with other teams : we need to interact with every team like Dev, Q/A, Program Management  and IT.
+
+We can manage the configuration of multiple servers using Ansible 
+We Need to maintain the infrastructure on cloud  using Terraform.
+
+Containerising the application by writing the docker files.
+
+And coming to monitoring part, we need to monitor the infrastructure actively using Prometheus & Grafana and Cloudwatch 
+
+Need to work on automating the daily tasks like collecting the logs from daily different sources.
+
+
+
+BRANCHING STRATEGIES:
+
+In our project we are using feature branching strategy 
+It has Master branch which is always running on production servers.
+And also is has integration branch which is having the same code and commits
+
+To implement this feature branching strategy, whenever we release any new feature for our application, we need to get the code from integration branch and named it as feature branch 
+
+So Here developer will write the code for new features and commit the code 
+So ci/cd will happens in dev env 
+
+If all the commits the successfully deployed in dev env, then we will merge the code into integration branch again
+
+Once after merging the code into integration branch, we will deploy the code in Q/A, PRE-PROD environments
+
+If the build the success in all environments then we will deploy in production sever also
+
+After that we will tag all these commits in integration  branch as V1.0 and add these tag into master branch.
+
+
+
+IF YOU. FOUND ANY BUG IN PRODUCTION, HOW COULD YOU RESOLVE.
+
+Firstly we have to find the problem where it happens
+If it happens due to code, We will follow down merging strategy 
+
+
+
+REASONS BEHIND THE PRODUCTION BUILD FAILURES IN CI/CD:
+If our servers are down, then the build got failed 
+Servers will gets down if we will not update them, to resolve this we will write scripts.
+
+Second reason is deploying the wrong branch
+
+Third reason is might be we build the code in wrong environment 
+Because we are not sure that all env servers may have some configurations 
+
