@@ -1,0 +1,44 @@
+Todays project commands:
+1  yum install git httpd -y && systemctl start httpd
+
+    2  yum install -y php php-mysqli php-json php-fpm php-devel
+
+    3  dnf install mariadb105 -y
+
+    4  git clone https://github.com/devops0014/ltibbhackathon.git
+
+    5  cd ltibbhackathon/
+
+    6  ls
+
+    7  vim config.php
+
+    8  vim deletedata.php
+
+    9  vim donate-blood.php
+
+   10  vim find-donor.php
+
+   11  vim search.php
+
+   12  vim signup.php
+
+   13  cp -r * /var/www/html/
+
+   14  cd
+
+   15  mysql -h mysqldb.c3cc2aoqiyqf.us-east-2.rds.amazonaws.com -u admin -p
+
+   16  php --version
+
+   17  history
+
+   18  yum install php-mysqlnd -y
+
+   19  systemctl restart httpd
+
+   20  mysql -h mysqldb.c3cc2aoqiyqf.us-east-2.rds.amazonaws.com -u admin -p
+
+   21  systemctl enable httpd
+
+   22  history
