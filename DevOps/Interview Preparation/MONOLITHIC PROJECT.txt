@@ -1,0 +1,157 @@
+STEP-1:	Launch an instance with key-pair, 8080 port and IAM Admin role
+STEP-2:	install terraform and write a terraform code to launch an instance with same key-pair.
+STEP-3: push that code into GitHub. 
+STEP-4: setup Jenkins in our server. 
+STEP-5: create a job in Jenkins (Automate terraform) to launch an instance. 
+STEP-6: install Ansible and its dependencies(python-pip, level, openssl and pip install boto3)
+STEP-7: write a plugin for getting prod server details
+STEP-8: allow all permissions for Ansible configuration on prod servers
+STEP-9: make ssh connection b/w the server through pem file
+STEP-10: write a script to automate the configuration on prod servers.
+
+
+STEP-2:	INSTALL TERRAFORM
+
+yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+ yum install terraform -y
+
+
+STEP-5:
+
+1. Choice parameters
+2. Integrate GitHub repo
+3. Shell:
+	#!/bin/bash
+	set -xe
+
+	cd /var/lib/jenkins/workspace/j1/Terraform
+
+	terraform init
+	terraform plan
+	terraform $tf_action -auto-approve
+
+	sleep 20
+
+	if [ $TERRAFORM_ACTION = "destroy" ]; then
+		exit 0
+	else
+		cd ../Ansible
+		ansible-playbook -i /opt/ansible/inventory/aws_ec2.yml deployment.yml
+	fi
+
+STEP-6,7,8,9:
+yum install ansible2 -y
+yum install python python-pip python-level openssl -y
+pip install boto3
+vi /etc/ansible/ansible.cfg
+    - [ ] 	inventory       = /opt/ansible/inventory/aws_ec2.yml
+    - [ ] 	host_key_checking = False
+    - [ ]        enable_plugins = aws_ec2 (line-330)
+    - [ ]         Vim keypair.yml
+Mkdir -p /opt/ansible/inventory
+Vim aws_ec2.yml		
+========================
+---
+plugin: aws_ec2
+regions:
+  - ap-south-1
+filters:
+  tag:Environment: dev
+======================
+
+Final check to connect the servers : ansible -i /opt/ansible/inventory/aws_ec2.yml all -u ec2-user --private-key /etc/ansible/march-kp.pem -m ping
+
+
+
+
+
+
+
+
+
+NEW JENKINS PIPELINE:
+
+pipeline {
+    agent any
+    stages {
+        stage('code') {
+            steps {
+                git branch: 'main', url: "https://github.com/devops0014/devops18.git"
+            }
+        }
+        stage("deploy") {
+            steps {
+                
+                    sh 'terraform init'
+                    sh 'terraform plan'
+                    sh 'terraform apply --auto-approve'
+               
+            }
+        }
+        stage ("deployment") {
+            steps {
+                
+                sh "ansible-playbook -i /opt/ansible/inventory/aws_ec2.yml /var/lib/jenkins/workspace/My-Project/ansible/deployment.yml"
+            }
+        }
+    }
+ }
+
+
+GitHub code url:
+https://github.com/devops0014/devops18.git
+
+
+==============================
+
+
+AFTER THAT ADD S3 BACKUP FOR TF STATE FILES:
+pipeline {
+    agent any
+    
+    stages {
+        stage('code') {
+            steps {
+                git branch: 'main', url: "https://github.com/devops0014/devops18.git"
+            }
+        }
+        stage("init") {
+            steps {
+                script {
+                    sh 'echo -e "yes\n" | terraform init'
+                }
+               
+            }
+        }
+        stage ("deploy") {
+            steps {
+                sh 'terraform plan'
+                sh 'terraform apply --auto-approve'
+            }
+        }
+        stage ("deployment") {
+            steps {
+                
+                sh "ansible-playbook -i /opt/ansible/inventory/aws_ec2.yml /var/lib/jenkins/workspace/My-Project/ansible/deployment.yml"
+            }
+        }
+    }
+    post {
+        always {
+            echo 'Slack Notifications'
+            post {
+        	always {
+            		mail to: 'awsanddevops14@gmail.com',
+                 	subject: "Jenkins Build Notification: ${currentBuild.fullDisplayName}",
+                 	body: """\
+                 		Build Status: ${currentBuild.currentResult}
+                 		Project: ${env.JOB_NAME}
+                 		Build Number: ${env.BUILD_NUMBER}
+                 		Build URL: ${env.BUILD_URL}
+                 	"""
+        	}
+	    }
+    	
+        }
+    }
+ }
