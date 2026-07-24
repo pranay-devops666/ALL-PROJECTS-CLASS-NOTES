@@ -1,1 +1,266 @@
 Monolithic Project Part-1
+===========================
+
+[root@ip-172-31-43-113 ~]# history
+    1  yum install git ansible -y
+    2  sudo yum update –y
+    3  sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+    4  sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+    5  sudo yum upgrade
+    6  sudo yum install java-21-amazon-corretto -y
+    7  sudo yum install jenkins git -y
+    8  sudo systemctl enable jenkins
+    9  sudo systemctl start jenkins
+   10  sudo systemctl status jenkins
+   11  yum install python-pip -y
+   12  syatemctl status jenkins
+   13  ststemctl status jenkins
+   14  systemctl status jenkins
+   15  cat /var/lib/jenkins/secrets/initialAdminPassword
+   16  sudo yum install -y yum-utils shadow-utils
+   17  sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+   18  sudo yum install terraform
+   19  aws configure list
+   20  aws sts get-caller-identity
+   21  terraform validate
+   22  history
+
+need to be install all tools 
+
+
+
+[root@ip-172-31-43-113 ~]# aws configure list
+NAME       : VALUE                    : TYPE             : LOCATION
+profile    : <not set>                : None             : None
+access_key : ****************QMLG     : iam-role         : 
+secret_key : ****************EuHY     : iam-role         : 
+region     : us-east-1                : imds             : 
+[root@ip-172-31-43-113 ~]# aws sts get-caller-identity
+{
+    "UserId": "AROAV63JEKB3UTSO2ZLIC:i-0ac8842dc71162f97",
+    "Account": "409852989559",
+    "Arn": "arn:aws:sts::409852989559:assumed-role/Terraform-Role/i-0ac8842dc71162f97"
+}
+[root@ip-172-31-43-113 ~]# terraform validate
+Success! The configuration is valid.
+
+[root@ip-172-31-43-113 ~]# 
+
+
+pipeline {
+    agent any
+    stages {
+        stage('Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/pranay-devops666/devops18.git'
+            }
+        }
+        stage('init') {
+            steps {
+                sh 'echo -e "yes\n" | terraform init'
+            }
+        }
+        stage('plan') {
+            steps {
+                sh 'terraform plan'
+            }
+        }
+        stage('Apply') {
+            steps {
+                sh 'terraform apply --auto-approve'
+            }
+        }
+    }
+}
+
+
+save and build
+
+[root@ip-172-31-43-113 ~]# mkdir -p /opt/ansible/inventory/
+[root@ip-172-31-43-113 ~]# cd /opt/ansible/inventory/
+[root@ip-172-31-43-113 inventory]# ll
+total 0
+[root@ip-172-31-43-113 inventory]# vim aws_ec2.yml
+[root@ip-172-31-43-113 inventory]# cat aws_ec2.yml 
+---
+plugin: aws_ec2
+regions:
+  - us-east-1
+filters:
+  tag:aws:autoscaling:groupName: web-server-asg
+[root@ip-172-31-43-113 inventory]# 
+
+
+[root@ip-172-31-43-113 inventory]# cd
+[root@ip-172-31-43-113 ~]# cd /etc/ansible/
+[root@ip-172-31-43-113 ansible]# pwd
+/etc/ansible
+[root@ip-172-31-43-113 ansible]# vim march-kp.pem
+[root@ip-172-31-43-113 ansible]# cat march-kp.pem 
+-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEAxfv+OTNBYh3JYDaqGl9j3sWJ737txy09cmkwjZUfZgP+jQdI
+Tq0TF3M94EjMZ4wU6HyrC+exTNWn4pQCN43HMAm621IqNZJdCn3jlYLGSTlpQnsf
+oIj3O2WL32E5hpyl8CrkBxrwo2wCgtwQfSIdUzCbned06yasCIEz5YYc4yNKOcly
+xYUsvxosWms5yhTXD4+u7mrEz4doUN6rGcP+0UQnLzCJlsLxwoWI9Bm8MR7cPJ3K
+DIpYKNyEGam3v/lufJydBcLWhuKryzRHhyuLNGyQEOTeMARgaUloQ8mf8CCfSGff
+BClYWaPl5uZpCH8FxeBf3iocgG+oo2i8YfPK+wIDAQABAoIBAQClHD1seJlbeRna
+2lvL+KdyPm2FROaJx+nJw33RZX609jnQZTVhH6efU+VTaYLGDCXXqTiAii3rtPb4
+15RtvhhSsJqbk49N9A0R1eD5bAFvSajF36aFnBQK/enDVfLCl1svyqU2Y7oxn78M
+YPiDUvL/0LbG3iM8hJjN0upzzP/ET8z/8QXZ3qwu6aflxIYInw8CZYcklyAODblo
+AO4NrtEan98+o+YRL4p0sFp7iec3+8xttXq9BHcfWNxq2B/YWjItmoSnAW7YeBsJ
+D2iUMqSDpBNX154FH8wjo+c8gA/8gw5QuBgWoocJ12CyGHcLQ1nIznTUoB6h8Goq
+d3FGGyr5AoGBAPxah5hAslaLd2i3HtJf8jOyHiARzbmF8plIi1whL25dnzyZ7dZ9
+wmrt69iajI8DPE8Fp6L59ikq5jO/G2KCS9Qc9a4jK/2DXCa1R0xzKohnMF1WhZ21
+LsdojOmsaSgvuyYXX9TZ/Xt+4HvEFD12/k3AuE0RzcYJoeepGoz7h++tAoGBAMjY
+WS0DPYSAfYvvRQ98vBg8eI2l6Jta1BrrB9OlIdGEzmSjm1NWzbn7iLao2TnRJwrx
+ZXMyttzZ1Jc5EWxo+xiaCeTZhVEENHIcO53AtDbyT3L8uFc+ssMXMNucuXb8Qbsu
+A1aDlaj7puRDM0DW3+VftbLF0UaD2SY533CKo9pHAoGAG5TdeyOfGlx1+akCImZA
+N6xBJKotfRiJ0n0eVjx+TabH77y3RRlLtZo5i9wgfsUQw2ZP0z1UzV0V+hPqL1Mk
+bJOZuqW3eibwXH61w0JXJL96hskdI4aZDUx9ElE40R6eauRlIgONdAEDEiP1Pl6S
+HvdwbWQDxKBq5MIT19LqIaUCgYEAvC0QKD9f9PRaLLDqeJ86sE5/+N8YN+56yhmp
+RJ/0NpUCt4Iedo/ewsEsD0/V7vjKZtNTZQKAGB4zs9fxPiyCDkPMv1EaOpUA+mT/
+akdx0gVncOndYUjKPkVNLoYBsryYbWKoF/fDUgcuD7HypG5uaj8pQy1abYH9A3a3
+pX8QE+MCgYBvWBKCZmbJrvZUzG+j/e6duvQAn7YiRtxjK6C6ZgMSGXV4Pi9nzDv8
+Lz0dzrl7VgldFEdX7xfdlLuZup7ngoKSiM8Ks7NvbQFoWBQqQU+7njPA2vsL0W9B
+7KUSkxtZMc4OKtf+OKanWNfCZClg7AxcPBzflsQ1RZax7pdWwEGpfg==
+-----END RSA PRIVATE KEY-----
+[root@ip-172-31-43-113 ansible]# 
+
+[root@ip-172-31-43-113 ansible]# ansible-config init --disabled > ansible.cfg
+[root@ip-172-31-43-113 ansible]# ll
+total 44
+-rw-r--r--. 1 root root 39584 Jul 24 09:08 ansible.cfg
+-rw-r--r--. 1 root root  1679 Jul 24 09:06 march-kp.pem
+drwxr-xr-x. 2 root root     6 Jun 10 19:47 roles
+[root@ip-172-31-43-113 ansible]# 
+
+[root@ip-172-31-43-113 ansible]# vim ansible.cfg 
+
+[defaults] --------------------------------------------------> line no:1
+- [ ]   inventory       = /opt/ansible/inventory/aws_ec2.yml
+- [ ]   host_key_checking = False
+
+:wq
+
+[root@ip-172-31-43-113 ansible]# vim ansible.cfg
+
+[defaults]
+- [ ]   inventory       = /opt/ansible/inventory/aws_ec2.yml
+- [ ]   host_key_checking = False
+
+enable_plugins = aws_ec2
+
+:wq
+
+[root@ip-172-31-43-113 ansible]# cd /opt/ansible/inventory/
+[root@ip-172-31-43-113 inventory]# pwd
+/opt/ansible/inventory
+[root@ip-172-31-43-113 inventory]#
+
+[root@ip-172-31-43-113 inventory]# ll
+total 4
+-rw-r--r--. 1 root root 100 Jul 24 09:01 aws_ec2.yml
+[root@ip-172-31-43-113 inventory]# cat aws_ec2.yml 
+---
+plugin: aws_ec2
+regions:
+  - us-east-1
+filters:
+  tag:aws:autoscaling:groupName: web-server-asg
+[root@ip-172-31-43-113 inventory]# 
+
+[root@ip-172-31-43-113 inventory]# pip install boto3 ---------------------------------------------------------------->
+Collecting boto3
+  Downloading boto3-1.42.97-py3-none-any.whl (140 kB)
+     |████████████████████████████████| 140 kB 23.9 MB/s            
+Requirement already satisfied: jmespath<2.0.0,>=0.7.1 in /usr/lib/python3.9/site-packages (from boto3) (0.10.0)
+Collecting s3transfer<0.17.0,>=0.16.0
+  Downloading s3transfer-0.16.1-py3-none-any.whl (86 kB)
+     |████████████████████████████████| 86 kB 10.4 MB/s             
+Collecting botocore<1.43.0,>=1.42.97
+  Downloading botocore-1.42.97-py3-none-any.whl (15.0 MB)
+     |████████████████████████████████| 15.0 MB 58.2 MB/s            
+Requirement already satisfied: urllib3<1.27,>=1.25.4 in /usr/lib/python3.9/site-packages (from botocore<1.43.0,>=1.42.97->boto3) (1.25.10)
+Requirement already satisfied: python-dateutil<3.0.0,>=2.1 in /usr/lib/python3.9/site-packages (from botocore<1.43.0,>=1.42.97->boto3) (2.8.1)
+Requirement already satisfied: six>=1.5 in /usr/lib/python3.9/site-packages (from python-dateutil<3.0.0,>=2.1->botocore<1.43.0,>=1.42.97->boto3) (1.15.0)
+Installing collected packages: botocore, s3transfer, boto3
+Successfully installed boto3-1.42.97 botocore-1.42.97 s3transfer-0.16.1
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+[root@ip-172-31-43-113 inventory]#
+
+pipeline {
+    agent any
+    stages {
+        stage('Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/pranay-devops666/devops18.git'
+            }
+        }
+        stage('init') {
+            steps {
+                sh 'echo -e "yes\n" | terraform init'
+            }
+        }
+        stage('plan') {
+            steps {
+                sh 'terraform plan'
+            }
+        }
+        stage('Apply') {
+            steps {
+                sh 'terraform apply --auto-approve'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                sh 'ansible-playbook -i /opt/ansible/inventory/aws_ec2.yml ansible/deployment.yml'
+            }
+        }
+    }
+}
+
+
+save and Build
+
+
+[root@ip-172-31-43-113 inventory]# yum install python-level openssl -y
+Last metadata expiration check: 3:40:11 ago on Fri Jul 24 08:00:51 2026.
+No match for argument: python-level
+Package openssl-1:3.5.5-1.amzn2023.0.5.x86_64 is already installed.
+Error: Unable to find a match: python-level
+[root@ip-172-31-43-113 inventory]# 
+
+pipeline {
+    agent any
+    stages {
+        stage('Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/pranay-devops666/devops18.git'
+            }
+        }
+        stage('init') {
+            steps {
+                sh 'echo -e "yes\n" | terraform init'
+            }
+        }
+        stage('plan') {
+            steps {
+                sh 'terraform plan'
+            }
+        }
+        stage('Apply') {
+            steps {
+                sh 'terraform apply --auto-approve'
+            }
+        }
+        stage('Deploy') {
+            steps {
+                sh 'ansible-playbook ansible/deployment.yml'
+            }
+        }
+    }
+}
+
+
+save and build
+
