@@ -261,6 +261,57 @@ pipeline {
     }
 }
 
+save and build
+
+
+below script is to make the s3 bucket empty
+
+pipeline {
+    agent any
+
+    stages {
+
+        stage('Code') {
+            steps {
+                git branch: 'main',
+                url: 'https://github.com/pranay-devops666/devops18.git'
+            }
+        }
+
+        stage('Init') {
+            steps {
+                sh 'terraform init -input=false'
+            }
+        }
+
+        stage('Plan') {
+            steps {
+                sh 'terraform plan'
+            }
+        }
+
+        stage('Empty S3 Bucket') {
+            steps {
+                sh '''
+                aws s3 rm s3://pranay-devops18-2026-001 --recursive
+                '''
+            }
+        }
+
+        stage('Apply') {
+            steps {
+                sh 'terraform apply -auto-approve'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh 'ansible-playbook ansible/deployment.yml'
+            }
+        }
+    }
+}
+
 
 save and build
 
