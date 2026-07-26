@@ -1,1 +1,335 @@
 Monolithic Project Part-2
+===========================
+
+
+[root@ip-172-31-27-166 ansible]# history
+    1  yum install git ansible python-pip -y
+    2  sudo yum update –y
+    3  sudo wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+    4  sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+    5  sudo yum upgrade
+    6  sudo yum install java-21-amazon-corretto -y
+    7  sudo yum install jenkins git -y
+    8  sudo systemctl enable jenkins
+    9  sudo systemctl start jenkins
+   10  sudo systemctl status jenkins
+   11  sudo yum install -y yum-utils shadow-utils
+   12  sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+   13  sudo yum install terraform
+   14  cat /var/lib/jenkins/secrets/initialAdminPassword
+   15  pip install boto3
+   16  cd /etc/ansible//
+   17  cd /etc/ansible/
+   18  cd
+   19  cd /etc/ansible/
+   20  ll
+   21  vim march-kp.pem
+   22  vim ansible.cfg
+   23  mkdir -p /opt/ansible/inventory
+   24  cd /opt/ansible/inventory/
+   25  vim aws_ec2.yml
+   26  ll
+   27  cd /var/lib/jenkins/workspace/MyDeployment/ansible/
+   28  pwd
+   29  ll
+   30  cd /var/lib/jenkins/workspace/
+   31  ll
+   32  cd MyDeployment
+   33  ll
+   34  cd ansible/
+   35  ll
+   36  su -jenkins
+   37  su - jenkins
+   38  cd
+   39  cd /etc/ansible/
+   40  ll
+   41  chmod 400 march-kp.pem 
+   42  ansible aws_ec2 -m ping
+   43  ansible /opt/ansible/inventory/aws_ec2.yml -m ping
+   44  chown jenkins:jenkins march-kp.pem 
+   45  ll
+   46  cd /var/lib/jenkins/
+   47  ll
+   48  ll .ssh
+   49  ll -a
+   50  mkdir .ssh
+   51  chown jenkins:jenkins .ssh/
+   52  chown jenkins:jenkins -R .ssh/
+   53  chmod 700 .ssh/
+   54  ll
+   55  ansible all -m ping
+   56  cd /opt/ansible/inventory/
+   57  ansible aws_ec2.yml -m ping
+   58  cd /etc/ansible/
+   59  vim ansible.cfg 
+   60  history
+   61  cd /var/lib/jenkins/
+   62  ls
+   63  ls -a
+   64  cd /etc/ansible/
+   65  ll
+   66  vim ansible.cfg 
+   67  ansible --version
+   68  cd /opt/ansible/
+   69  ll
+   70  cp /etc/ansible/march-kp.pem .
+   71  ll
+   72  cd ..
+   73  ll
+   74  cd
+   75  ll
+   76  cd /opt/ansible/
+   77  ll
+   78  cd /opt/ansible/inventory/
+   79  ll
+   80  ansible aws_ec2.yml -m ping
+   81  ll
+   82  vim aws_ec2.yml 
+   83  cd
+   84  cd /opt/ansible/inventory/
+   85  ll
+   86  vim aws_ec2.yml 
+   87  cd
+   88  vim /etc/ansible/ansible.cfg 
+   89  vim /opt/ansible/inventory/aws_ec2.yml 
+   90  cd /opt/ansible/
+   91  ll
+   92  vim /etc/ansible/ansible.cfg 
+   93  ansible -i /opt/ansible/inventory/aws_ec2.yml all -m ping
+   94  ansible -i /opt/ansible/inventory/aws_ec2.yml all -u ec2-user --private-key /etc/ansible/march-kp.pem -m ping
+   95  history
+aws s3api get-bucket-versioning --bucket pranay-devopss18-2026-001
+  126  aws s3 ls s3://pranay-devopss18-2026-001 --recursive ---------------------> command to check 
+  127  aws s3 rm s3://pranay-devopss18-2026-001 --recursive
+  128  aws s3api list-object-versions --bucket pranay-devopss18-2026-001  ---------------------> command to delete or empty the bucket terraform state file in S3
+
+
+
+vim aws_ec2.yml
+---
+plugin: amazon.aws.aws_ec2
+regions:
+  - us-east-1
+filters:
+  tag:aws:autoscaling:groupName: web-server-asg
+
+:wq
+
+
+vim ansible.cfg
+
+[defaults]
+inventory       = /opt/ansible/invrntory/aws_ec2.yml
+host_key_checking = False
+enable_plugins = amazon.aws.aws_ec2
+
+:wq
+
+
+jenkins pipeline to create everything
+=========================================
+
+pipeline {
+    agent any
+    stages {
+        stage('Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/pranay-devops666/devops18.git'
+            }
+        }
+        stage('Init') {
+            steps {
+                script {
+                    sh 'echo -e "yes\n" | terraform init'
+                }
+            }
+        }
+        stage('Plan') {
+            steps {
+                script {
+                    sh 'terraform plan'
+                }
+            }
+        }
+        stage('Apply') {
+            steps {
+                script {
+                    sh 'terraform apply --auto-approve'
+                }
+            }
+        }
+        stage('Deploy') {
+            steps {
+                sh 'ansible-playbook -i /opt/ansible/inventory/aws_ec2.yml /var/lib/jenkins/workspace/MyDeployment/ansible/deployment.yml'
+            }
+        }
+    }
+}
+
+save & Build
+
+
+jenkins pipeline to destroy everything
+=========================================
+
+pipeline {
+    agent any
+
+    environment {
+        AWS_DEFAULT_REGION = 'us-east-1'
+        TF_STATE_BUCKET = 'YOUR_BUCKET_NAME'
+        TF_STATE_FILE = 'terraform.tfstate'
+    }
+
+    stages {
+
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main',
+                url: 'https://github.com/pranay-devops666/devops18.git'
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                sh '''
+                terraform init
+                '''
+            }
+        }
+
+        stage('Terraform Destroy') {
+            steps {
+                sh '''
+                terraform destroy -auto-approve
+                '''
+            }
+        }
+
+        stage('Delete Terraform State File') {
+            steps {
+                sh '''
+                aws s3 rm s3://${TF_STATE_BUCKET}/${TF_STATE_FILE}
+                '''
+            }
+        }
+
+        stage('Delete Remaining Files (if any)') {
+            steps {
+                sh '''
+                aws s3 rm s3://${TF_STATE_BUCKET} --recursive
+                '''
+            }
+        }
+
+        stage('Delete S3 Bucket') {
+            steps {
+                sh '''
+                aws s3api delete-bucket --bucket ${TF_STATE_BUCKET} --region ${AWS_DEFAULT_REGION}
+                '''
+            }
+        }
+
+    }
+
+    post {
+        success {
+            echo "Infrastructure destroyed successfully."
+        }
+
+        failure {
+            echo "Destroy pipeline failed."
+        }
+    }
+}
+
+
+save & Build
+
+
+
+
+To Delete S3 Bucket automation like beow
+===============================================
+
+Step 1: Add force_destroy
+
+Update your S3 bucket resource:
+
+resource "aws_s3_bucket" "one" {
+  bucket        = "pranay-devopss18-2026-001"
+  force_destroy = true
+}
+
+Step 2: Use this Jenkins pipeline
+
+pipeline {
+    agent any
+
+    environment {
+        BUCKET = "pranay-devopss18-2026-001"
+        REGION = "us-east-1"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                git branch: 'main',
+                url: 'https://github.com/pranay-devops666/devops18.git'
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                sh 'terraform init'
+            }
+        }
+
+        stage('Terraform Destroy') {
+            steps {
+                sh 'terraform destroy -auto-approve || true'
+            }
+        }
+
+        stage('Delete All Objects and Versions') {
+            steps {
+                sh '''
+                aws s3 rm s3://$BUCKET --recursive
+
+                aws s3api list-object-versions --bucket $BUCKET \
+                --query='{Objects: Versions[].{Key:Key,VersionId:VersionId}}' \
+                --output=json > versions.json
+
+                if [ -s versions.json ]; then
+                  aws s3api delete-objects \
+                  --bucket $BUCKET \
+                  --delete file://versions.json || true
+                fi
+
+                aws s3api list-object-versions --bucket $BUCKET \
+                --query='{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}' \
+                --output=json > markers.json
+
+                if [ -s markers.json ]; then
+                  aws s3api delete-objects \
+                  --bucket $BUCKET \
+                  --delete file://markers.json || true
+                fi
+                '''
+            }
+        }
+
+        stage('Delete Bucket') {
+            steps {
+                sh '''
+                aws s3api delete-bucket \
+                --bucket $BUCKET \
+                --region $REGION
+                '''
+            }
+        }
+    }
+}
+
+save & Build
