@@ -1,1 +1,76 @@
 Azure Project Using CI-CD & EKS
+
+
+
+AZURE PROJECT PIPELINES WITH STAGES AS WELL
+===============================================
+
+
+
+# Maven
+# Build your Java project and run tests with Apache Maven.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/java
+
+trigger:
+- master
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+
+- task: Maven@3
+  displayName: Build Maven Project
+  inputs:
+    mavenPomFile: 'pom.xml'
+    goals: 'clean package'
+
+- task: CopyFiles@2
+  displayName: Copy target folder
+  inputs:
+    SourceFolder: '$(Build.SourcesDirectory)/target'
+    Contents: '**'
+    TargetFolder: '$(Build.SourcesDirectory)/Docker-app/target'
+
+- task: Docker@2
+  displayName: Build and Push Docker Image
+  inputs:
+    containerRegistry: 'acr-connection'
+    repository: 'app'
+    command: 'buildAndPush'
+    Dockerfile: 'Docker-app/Dockerfile'
+    tags: |
+      appimage
+- task: Docker@2
+  displayName: Build and Push Docker Image
+  inputs:
+    containerRegistry: 'acr-connection'
+    repository: 'db'
+    command: 'buildAndPush'
+    Dockerfile: 'Docker-db/Dockerfile'
+    tags: |
+      dbimage
+- task: Maven@3
+  inputs:
+    mavenPomFile: 'pom.xml'
+    goals: 'clean package'
+    publishJUnitResults: true
+    testResultsFiles: '**/surefire-reports/TEST-*.xml'
+    javaHomeOption: 'JDKVersion'
+    mavenVersionOption: 'Default'
+    mavenAuthenticateFeed: false
+    effectivePomSkip: false
+    sonarQubeRunAnalysis: false
+- task: KubernetesManifest@1
+  displayName: Deploy to AKS
+  inputs:
+    action: 'deploy'
+    connectionType: 'azureResourceManager'
+    azureSubscriptionConnection: 'Azure subscription 1(2142a505-1419-4b18-9ef9-b3b41e56d1bf)'
+    azureResourceGroup: 'myrg'
+    kubernetesCluster: 'my-aks'
+    namespace: 'default'
+    manifests: |
+      manifests/app-deployment.yml
+      manifests/db-deployment.yml
