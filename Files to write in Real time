@@ -1,0 +1,109 @@
+Files to write in Real time as a role of DevOps Engineer
+
+
+https://chatgpt.com/c/6aaa8463-c104-83e9-874c-ade2d2ef7cff
+
+Developer
+   ↓
+GitHub
+   ↓
+Pull Request
+   ↓
+CI Pipeline
+   ↓
+Build
+   ↓
+Unit Tests
+   ↓
+SonarQube
+   ↓
+Security Scan
+   ↓
+Docker Build
+   ↓
+Docker Image
+   ↓
+Docker Hub / ECR
+   ↓
+Terraform
+   ↓
+AWS Infrastructure
+   ↓
+Kubernetes / EKS
+   ↓
+Deployment
+   ↓
+Ingress / Load Balancer
+   ↓
+Application
+   ↓
+Prometheus + Grafana
+   ↓
+CloudWatch
+
+
+The files you should learn
+
+For a real-world DevOps project, I recommend learning these files:
+
+
+project/
+│
+├── application files
+│
+├── Dockerfile
+├── .dockerignore
+├── docker-compose.yml
+│
+├── Jenkinsfile
+│
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml
+│
+├── k8s/
+│   ├── namespace.yaml
+│   ├── configmap.yaml
+│   ├── secret.yaml
+│   ├── deployment.yaml
+│   ├── service.yaml
+│   ├── ingress.yaml
+│   ├── hpa.yaml
+│   └── serviceaccount.yaml
+│
+├── terraform/
+│   ├── provider.tf
+│   ├── variables.tf
+│   ├── terraform.tfvars
+│   ├── vpc.tf
+│   ├── subnet.tf
+│   ├── security-groups.tf
+│   ├── iam.tf
+│   ├── eks.tf
+│   ├── outputs.tf
+│   └── versions.tf
+│
+├── ansible/
+│   ├── inventory
+│   ├── playbook.yml
+│   └── roles/
+│
+├── monitoring/
+│   ├── prometheus.yml
+│   └── alert-rules.yml
+│
+├── scripts/
+│   ├── build.sh
+│   ├── deploy.sh
+│   └── rollback.sh
+│
+├── sonar-project.properties
+├── .gitignore
+├── README.md
+└── CHANGELOG.md
+
+
+
+
+
+
