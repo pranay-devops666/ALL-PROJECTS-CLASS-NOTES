@@ -1,8 +1,5 @@
-KUBERNETES K8's PROJECT END TO END WITH EKS & TERRAFORM
-==========================================================
-
-K8S END TO END PROJECT WITH EKS & TERRAFORM
-================================================
+PROJECT-3 K8S END TO END PROJECT WITH EKS & TERRAFORM
+========================================================
 
 CLIENT REQUIREMENTS: Need Events Applications (people may login this application and conduct events or participate events as well)
 
@@ -137,7 +134,1007 @@ Go to sonarqube Dashboard---------> create a new project
 Go to Jenkins Dashboard and do configurations on system for sonarqube-----> go to manage jenkins -----------> select systems-------> and do configurations type
 secret text
 
-Go to Jenkins Dashboard and do configurations on tools for sonarqube
+
+
+=====================================================================================================================================================================================================================================
+=====================================================================================================================================================================================================================================
+
+
+FRESHLY PRACTICED PROJECT ON 17th SEPTEMBER 2026
+
+
+Launch one ec2-instance -----------------> 
+
+do install and setup Jenkins, install docker(do give docker permissions as well)
+
+[root@ip-172-31-21-180 ~]# yum install docker -y && systemctl start docker ------------------------>
+
+[root@ip-172-31-21-180 ~]# chmod 777 /var/run//docker.sock ------------------------------> giving permissions to docker
+[root@ip-172-31-21-180 ~]# 
+
+pipeline {
+    agent any
+    stages {
+        stage('Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/pranay-devops666/3-Tier-Full-Stack-yelp-camp.git'
+            }
+        }
+    }
+}
+
+
+next stage is CQA for this need to create a container 
+
+[root@ip-172-31-21-180 ~]# docker run -itd --name sonar -p 9000:9000 sonarqube:lts-community ------------------------------------------------------------->
+Unable to find image 'sonarqube:lts-community' locally
+lts-community: Pulling from library/sonarqube
+60d98d907669: Pull complete 
+e24a8b9e652f: Pull complete 
+f3929ce9ef98: Pull complete 
+1df735f481ad: Pull complete 
+5d5a1fad7028: Pull complete 
+eb27e3a98da1: Pull complete 
+c7ad1fe61e07: Pull complete 
+4f4fb700ef54: Pull complete 
+Digest: sha256:f709975ab31d2d08f5a3ae2dc73a31ee011afc8cf28845082c17c55d45df9df5
+Status: Downloaded newer image for sonarqube:lts-community
+b7cae36d6ea22e335c2341ceac5c2c0f0d2dd038a6a96f17beda1df0bf90edea
+[root@ip-172-31-21-180 ~]# 
+
+
+http://100.52.237.84:9000/ -------------------------> access to sonarqube
+
+pipeline {
+    agent any
+    environment {
+        scannerHome = tool 'mysonar';
+    }
+    stages {
+        stage('Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/pranay-devops666/3-Tier-Full-Stack-yelp-camp.git'
+            }
+        }
+        stage('SONARQUBE CQA') {
+            steps {
+                withSonarQubeEnv('mysonar') {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+    }
+}
+
+
+next stage is QualityGates means need to create a webhooks in sonarqube
+
+select created project in sonarqube--------------> select project settings -------------> select webhook -------------------> create webhook ---------> name: jenkins
+URL: http://100.52.237.84:8080/sonarqube-webhook/ --------------------> create
+
+pipeline {
+    agent any
+    environment {
+        scannerHome = tool 'mysonar';
+    }
+    stages {
+        stage('Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/pranay-devops666/3-Tier-Full-Stack-yelp-camp.git'
+            }
+        }
+        stage('SONARQUBE CQA') {
+            steps {
+                withSonarQubeEnv('mysonar') {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage('QualityGates') {
+            steps {
+                script {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar-id'
+                }
+            }
+        }
+    }
+}
 
 
 
+Next stage is OSWASP(OpenSourceWebAppliationSecureProject)
+
+for OWSAP need to create one token
+
+go to this website and create one token https://owasp.org/
+
+go to this website and create one token https://nvd.nist.gov/developers/request-an-api-key
+Organization Name: our wish
+EMmail Address: our email
+Organization Type: Academia
+ do Submit
+
+Go to manage jenkins --------------> select tools ------------> scroll to last down ---------> select Dependency-Check installations name: DP-Check do tick install
+automatically -------> Install from github.com --------> select latest version ----------> save
+
+go to pipeline syntax --------> select depency check -----------> it will automatically come what we done configuration
+
+Arguments: --scan ./ --disableYarnAudi --disableNodeAudit ------------> generate pipeline pipeline will come like below
+
+dependencyCheck additionalArguments: '--scan ./ --disableYarnAudi --disableNodeAudit', nvdCredentialsId: 'oswap-id', odcInstallation: 'DP-Check'
+
+go to pipeline syntax --------> select dependencyCheckPublisher pattern -----------> it will automatically come what we done configuration
+
+dependencyCheckPublisher pattern: '**/dependency-check-report.xml'  ------------> generate pipeline pipeline will come like below
+
+dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+
+
+
+pipeline {
+    agent any
+    environment {
+        scannerHome = tool 'mysonar';
+    }
+    stages {
+        stage('Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/pranay-devops666/3-Tier-Full-Stack-yelp-camp.git'
+            }
+        }
+        stage('SONARQUBE CQA') {
+            steps {
+                withSonarQubeEnv('mysonar') {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage('QualityGates') {
+            steps {
+                script {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar-id'
+                }
+            }
+        }
+        stage('OWSAP') {
+            steps {
+                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudi --disableNodeAudit', nvdCredentialsId: 'oswap-id', odcInstallation: 'DP-Check'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+    }
+}
+
+
+
+The above stage BUild will take upto 30 minutes to BUild the Job
+
+Next stage is to bUild the Image, Scan the Image, to do the Docker Registry
+
+Next stage is Build the Image & Scan that Image as well with using Docker, DockerFile to build the Image Trivy to scan the Image and Docker Registry 
+
+Need to install Trivy on ec2-instance like below
+
+sudo yum install -y wget && wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh && sudo sh install.sh -b /usr/local/bin
+aquasecurity/trivy info checking GitHub for tag 'v0.67.2'
+aquasecurity/trivy info found version: 0.67.2 for v0.67.2/Linux/64bit
+aquasecurity/trivy info installed /usr/local/bin/trivy --------------------------------------------->
+
+chmod 777 /var/run//docker.sock --------------------------------------------------->
+
+pipeline {
+    agent any
+    environment {
+        scannerHome = tool 'mysonar';
+    }
+    stages {
+        stage('Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/pranay-devops666/3-Tier-Full-Stack-yelp-camp.git'
+            }
+        }
+        stage('SONARQUBE CQA') {
+            steps {
+                withSonarQubeEnv('mysonar') {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage('QualityGates') {
+            steps {
+                script {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar-id'
+                }
+            }
+        }
+        stage('OWSAP') {
+            steps {
+                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudi --disableNodeAudit', nvdCredentialsId: 'oswap-id', odcInstallation: 'DP-Check'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+        stage('Build Image') {
+            steps {
+                sh 'docker build -t appimage .'
+            }
+        }
+        stage('Scan image') {
+            steps {
+                sh 'trivy image appimage'
+            }
+        }
+        stage('Docker Registry') {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'docker-hub-id') {
+                        sh 'docker tag appimage pranay419/sep:appimage'
+                        sh 'docker push pranay419/sep:appimage'
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+Next stage is to deploy with Docker
+
+pipeline {
+    agent any
+    environment {
+        scannerHome = tool 'mysonar';
+    }
+    stages {
+        stage('Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/pranay-devops666/3-Tier-Full-Stack-yelp-camp.git'
+            }
+        }
+        stage('SONARQUBE CQA') {
+            steps {
+                withSonarQubeEnv('mysonar') {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage('Quality Gates') {
+            steps {
+                script {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar-iid'
+                }
+            }
+        }
+        stage('OSWASP') {
+            steps {
+                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudi --disableNodeAudit', nvdCredentialsId: 'OSWASP-id', odcInstallation: 'DP-Check'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+        stage('Build Image') {
+            steps {
+                sh 'docker build -t appimage .'
+            }
+        }
+        stage('Scan image') {
+            steps {
+                sh 'trivy image appimage'
+            }
+        }
+        stage('Docker Registry') {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'dockerhud-id') {
+                        sh 'docker tag appimage pranay419/sep:appimage'
+                        sh 'docker push pranay419/sep:appimage'
+                    }
+                }
+            }
+        }
+        stage('Deploy') {
+            steps {
+                sh 'docker run -itd --name  originalcontainer -p 1234:3000 pranay419/sep:appimage'
+            }
+        }
+    }
+}
+
+
+Deployed successfully but container went to exited state 
+
+[root@ip-172-31-22-217 ~]# docker ps -a ----------------------------------------->
+CONTAINER ID   IMAGE                     COMMAND                  CREATED              STATUS                      PORTS                                       NAMES
+2e1b25f04ea7   pranay419/sep:appimage    "docker-entrypoint.s…"   About a minute ago   Exited (1) 47 seconds ago                                               originalcontainer
+98f5b9587bbb   sonarqube:lts-community   "/opt/sonarqube/dock…"   About an hour ago    Up About an hour            0.0.0.0:9000->9000/tcp, :::9000->9000/tcp   sonar
+[root@ip-172-31-22-217 ~]# docker logs originalcontainer
+
+> yelpcamp@1.0.0 start
+> node app.js
+
+/app/node_modules/@mapbox/mapbox-sdk/lib/classes/mapi-client.js:25
+    throw new Error('Cannot create a client without an access token');
+    ^
+
+Error: Cannot create a client without an access token
+    at NodeClient.MapiClient (/app/node_modules/@mapbox/mapbox-sdk/lib/classes/mapi-client.js:25:11)
+    at new NodeClient (/app/node_modules/@mapbox/mapbox-sdk/lib/node/node-client.js:7:14)
+    at createNodeClient (/app/node_modules/@mapbox/mapbox-sdk/lib/node/node-client.js:24:10)
+    at /app/node_modules/@mapbox/mapbox-sdk/services/service-helpers/create-service-factory.js:13:16
+    at Object.<anonymous> (/app/controllers/campgrounds.js:4:18)
+    at Module._compile (node:internal/modules/cjs/loader:1364:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+    at Module.load (node:internal/modules/cjs/loader:1203:32)
+    at Module._load (node:internal/modules/cjs/loader:1019:12)
+    at Module.require (node:internal/modules/cjs/loader:1231:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/app/routes/campgrounds.js:3:21)
+    at Module._compile (node:internal/modules/cjs/loader:1364:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+    at Module.load (node:internal/modules/cjs/loader:1203:32)
+    at Module._load (node:internal/modules/cjs/loader:1019:12)
+
+Node.js v18.20.8
+
+> yelpcamp@1.0.0 start
+> node app.js
+
+/app/node_modules/@mapbox/mapbox-sdk/lib/classes/mapi-client.js:25
+    throw new Error('Cannot create a client without an access token');
+    ^
+
+Error: Cannot create a client without an access token
+    at NodeClient.MapiClient (/app/node_modules/@mapbox/mapbox-sdk/lib/classes/mapi-client.js:25:11)
+    at new NodeClient (/app/node_modules/@mapbox/mapbox-sdk/lib/node/node-client.js:7:14)
+    at createNodeClient (/app/node_modules/@mapbox/mapbox-sdk/lib/node/node-client.js:24:10)
+    at /app/node_modules/@mapbox/mapbox-sdk/services/service-helpers/create-service-factory.js:13:16
+    at Object.<anonymous> (/app/controllers/campgrounds.js:4:18)
+    at Module._compile (node:internal/modules/cjs/loader:1364:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+    at Module.load (node:internal/modules/cjs/loader:1203:32)
+    at Module._load (node:internal/modules/cjs/loader:1019:12)
+    at Module.require (node:internal/modules/cjs/loader:1231:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/app/routes/campgrounds.js:3:21)
+    at Module._compile (node:internal/modules/cjs/loader:1364:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+    at Module.load (node:internal/modules/cjs/loader:1203:32)
+    at Module._load (node:internal/modules/cjs/loader:1019:12)
+
+Node.js v18.20.8
+[root@ip-172-31-22-217 ~]# 
+
+
+
+why this error means error is missing Token what Token missing is mapbox Token
+
+
+CLOUDINARY_CLOUD_NAME=djdim5rli
+CLOUDINARY_KEY=245858558853583 
+CLOUDINARY_SECRET=1IpXlg39e9Hty0gmTXm3Z-5Bwyc
+MAPBOX_TOKEN=
+DB_URL="mongodb+srv://gorantlapranay8_db_user:Pranay@1409@mycluster.hlwgr2g.mongodb.net/?appName=MyCluster"
+SECRET=[Your Chosen Secret Key] # This can be any value you prefer
+
+
+
+we need to store all above those details in jenkins like below
+
+go to manage jenkins ------------> credentials -----------> system ----------> global ----------> add credentiasl ----------> select secret text --------> next
+in secret: pass the value as djdim5rli in id: CLOUDINARY_CLOUD_NAME ---------> save 
+
+add credentiasl ----------> select secret text --------> next
+in secret: pass the value as djdim5rli in id: CLOUDINARY_KEY ---------> save 
+
+add credentiasl ----------> select secret text --------> next
+in secret: pass the value as djdim5rli in id: CLOUDINARY_SECRET ---------> save 
+
+add credentiasl ----------> select secret text --------> next
+in secret: pass the value as djdim5rli in id: MAPBOX_TOKEN ---------> save 
+
+add credentiasl ----------> select secret text --------> next
+in secret: pass the value as djdim5rli in id: DB_URL ---------> save 
+
+Now go to jenkins dashboard
+
+Now we need to use -e in jenkins pipeline to allow inside while creating the container we will use -e and need to add that environmet variables in jenkins pipeline
+also like below
+
+remeber also those that environment variables should come from credentials 
+
+pipeline {
+    agent any
+    environment {
+        scannerHome = tool 'mysonar';
+        CCN = credentials('CLOUDINARY_CLOUD_NAME')
+        CK = credentials('CLOUDINARY_KEY')
+        CS = credentials('CLOUDINARY_SECRET')
+        MT = credentials('MAPBOX_TOKEN')
+        DB = credentials('DB_URL')
+    }
+    stages {
+        stage('Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/pranay-devops666/3-Tier-Full-Stack-yelp-camp.git'
+            }
+        }
+        stage('SONARQUBE CQA') {
+            steps {
+                withSonarQubeEnv('mysonar') {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage('Quality Gates') {
+            steps {
+                script {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar-iid'
+                }
+            }
+        }
+        stage('OSWASP') {
+            steps {
+                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudi --disableNodeAudit', nvdCredentialsId: 'OSWASP-id', odcInstallation: 'DP-Check'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+        stage('Build Image') {
+            steps {
+                sh 'docker build -t appimage .'
+            }
+        }
+        stage('Scan image') {
+            steps {
+                sh 'trivy image appimage'
+            }
+        }
+        stage('Docker Registry') {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'dockerhud-id') {
+                        sh 'docker tag appimage pranay419/sep:appimage'
+                        sh 'docker push pranay419/sep:appimage'
+                    }
+                }
+            }
+        }
+        stage('Deploy') {
+            steps {
+                sh 'docker run -itd --name originalcontainer -p 1234:3000 -e $CCN -e $CK -e $CS -e $MT -e $DB pranay419/sep:appimage'
+            }
+        }
+    }
+}
+
+Now do delete previous container like below
+
+[root@ip-172-31-22-217 ~]# docker ps -a ------------------------------------------------->
+CONTAINER ID   IMAGE                     COMMAND                  CREATED             STATUS                         PORTS                                       NAMES
+620e0c94d309   pranay419/sep:appimage    "docker-entrypoint.s…"   About an hour ago   Exited (1) About an hour ago                                               originalcontainer
+98f5b9587bbb   sonarqube:lts-community   "/opt/sonarqube/dock…"   4 hours ago         Up 4 hours                     0.0.0.0:9000->9000/tcp, :::9000->9000/tcp   sonar
+[root@ip-172-31-22-217 ~]# docker rm originalcontainer ------------------------------------------------->
+originalcontainer
+[root@ip-172-31-22-217 ~]# docker ps -a ------------------------------------------------->
+CONTAINER ID   IMAGE                     COMMAND                  CREATED       STATUS       PORTS                                       NAMES
+98f5b9587bbb   sonarqube:lts-community   "/opt/sonarqube/dock…"   4 hours ago   Up 4 hours   0.0.0.0:9000->9000/tcp, :::9000->9000/tcp   sonar
+
+Now build this above job 
+
+Finished: SUCCESS
+
+[root@ip-172-31-22-217 ~]# docker ps
+CONTAINER ID   IMAGE                     COMMAND                  CREATED       STATUS       PORTS                                       NAMES
+98f5b9587bbb   sonarqube:lts-community   "/opt/sonarqube/dock…"   4 hours ago   Up 4 hours   0.0.0.0:9000->9000/tcp, :::9000->9000/tcp   sonar
+[root@ip-172-31-22-217 ~]# docker ps -a 
+CONTAINER ID   IMAGE                     COMMAND                  CREATED         STATUS                     PORTS                                       NAMES
+842b88ded3f1   pranay419/sep:appimage    "docker-entrypoint.s…"   3 minutes ago   Exited (1) 3 minutes ago                                               originalcontainer
+98f5b9587bbb   sonarqube:lts-community   "/opt/sonarqube/dock…"   4 hours ago     Up 4 hours                 0.0.0.0:9000->9000/tcp, :::9000->9000/tcp   sonar
+[root@ip-172-31-22-217 ~]# docker log originalcontainer
+docker: 'log' is not a docker command.
+See 'docker --help'
+[root@ip-172-31-22-217 ~]# docker logs originalcontainer
+
+> yelpcamp@1.0.0 start
+> node app.js
+
+/app/node_modules/@mapbox/mapbox-sdk/lib/classes/mapi-client.js:25
+    throw new Error('Cannot create a client without an access token');
+    ^
+
+Error: Cannot create a client without an access token
+    at NodeClient.MapiClient (/app/node_modules/@mapbox/mapbox-sdk/lib/classes/mapi-client.js:25:11)
+    at new NodeClient (/app/node_modules/@mapbox/mapbox-sdk/lib/node/node-client.js:7:14)
+    at createNodeClient (/app/node_modules/@mapbox/mapbox-sdk/lib/node/node-client.js:24:10)
+    at /app/node_modules/@mapbox/mapbox-sdk/services/service-helpers/create-service-factory.js:13:16
+    at Object.<anonymous> (/app/controllers/campgrounds.js:4:18)
+    at Module._compile (node:internal/modules/cjs/loader:1364:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+    at Module.load (node:internal/modules/cjs/loader:1203:32)
+    at Module._load (node:internal/modules/cjs/loader:1019:12)
+    at Module.require (node:internal/modules/cjs/loader:1231:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/app/routes/campgrounds.js:3:21)
+    at Module._compile (node:internal/modules/cjs/loader:1364:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1422:10)
+    at Module.load (node:internal/modules/cjs/loader:1203:32)
+    at Module._load (node:internal/modules/cjs/loader:1019:12)
+
+Node.js v18.20.8
+[root@ip-172-31-22-217 ~]# 
+
+why we got error contanier didn't run up means in above pipeline we passed values only we didn't passed keys into it
+
+now we will do like below
+
+pipeline {
+    agent any
+    environment {
+        scannerHome = tool 'mysonar';
+        CCN = credentials('CLOUDINARY_CLOUD_NAME')
+        CK = credentials('CLOUDINARY_KEY')
+        CS = credentials('CLOUDINARY_SECRET')
+        MT = credentials('MAPBOX_TOKEN')
+        DB = credentials('DB_URL')
+    }
+    stages {
+        stage('Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/pranay-devops666/3-Tier-Full-Stack-yelp-camp.git'
+            }
+        }
+        stage('SONARQUBE CQA') {
+            steps {
+                withSonarQubeEnv('mysonar') {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage('Quality Gates') {
+            steps {
+                script {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar-iid'
+                }
+            }
+        }
+        stage('OSWASP') {
+            steps {
+                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudi --disableNodeAudit', nvdCredentialsId: 'OSWASP-id', odcInstallation: 'DP-Check'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+        stage('Build Image') {
+            steps {
+                sh 'docker build -t appimage .'
+            }
+        }
+        stage('Scan image') {
+            steps {
+                sh 'trivy image appimage'
+            }
+        }
+        stage('Docker Registry') {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'dockerhud-id') {
+                        sh 'docker tag appimage pranay419/sep:appimage'
+                        sh 'docker push pranay419/sep:appimage'
+                    }
+                }
+            }
+        }
+        stage('Deploy') {
+            steps {
+                sh 'docker run -itd --name originalcontainer -p 1234:3000 -e CLOUDINARY_CLOUD_NAME=$CCN -e CLOUDINARY_KEY=$CK -e CLOUDINARY_SECRET=$CS -e MAPBOX_TOKEN=$MT -e DB_URL=$DB pranay419/sep:appimage'
+            }
+        }
+    }
+}
+
+sva and Build this above JOB now
+
+[root@ip-172-31-22-217 ~]# docker ps
+CONTAINER ID   IMAGE                     COMMAND                  CREATED       STATUS       PORTS                                       NAMES
+98f5b9587bbb   sonarqube:lts-community   "/opt/sonarqube/dock…"   4 hours ago   Up 4 hours   0.0.0.0:9000->9000/tcp, :::9000->9000/tcp   sonar
+[root@ip-172-31-22-217 ~]# docker ps -a
+CONTAINER ID   IMAGE                     COMMAND                  CREATED              STATUS                          PORTS                                       NAMES
+38a5667c9fc8   pranay419/sep:appimage    "docker-entrypoint.s…"   About a minute ago   Exited (1) About a minute ago                                               container
+98f5b9587bbb   sonarqube:lts-community   "/opt/sonarqube/dock…"   4 hours ago          Up 4 hours                      0.0.0.0:9000->9000/tcp, :::9000->9000/tcp   sonar
+[root@ip-172-31-22-217 ~]# docker start container
+container
+[root@ip-172-31-22-217 ~]# docker ps -a
+CONTAINER ID   IMAGE                     COMMAND                  CREATED         STATUS         PORTS                                       NAMES
+38a5667c9fc8   pranay419/sep:appimage    "docker-entrypoint.s…"   2 minutes ago   Up 2 seconds   0.0.0.0:1234->3000/tcp, :::1234->3000/tcp   container
+98f5b9587bbb   sonarqube:lts-community   "/opt/sonarqube/dock…"   4 hours ago     Up 4 hours     0.0.0.0:9000->9000/tcp, :::9000->9000/tcp   sonar
+[root@ip-172-31-22-217 ~]# 
+
+now the container is up 
+now we can do access with public ip & port number 1234
+
+Now we need to deploy our application with  EKS 
+
+for EKS we need an cluster
+
+Do Install Terraform on ec2-instance
+
+[root@ip-172-31-22-217 ~]# sudo yum install -y yum-utils shadow-utils
+sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
+sudo yum install terraform-------------------------------------------------------------------------------------->
+
+CREATE EKS CLUSTER USING TERRAFORM
+=========================================
+
+1. Launch one ec2-instance and install terraform in it
+2. install AWS CLI in it
+   curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+  unzip awscliv2.zip
+  sudo ./aws/install
+3. Install Kubectl in it
+4. Install EKS CTL in it
+  # for ARM systems, set ARCH to: `arm64`, `armv6` or `armv7`
+ARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')
+PLATFORM=$(uname -s)_$ARCH
+
+curl -sLO "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_$PLATFORM.tar.gz"
+
+# (Optional) Verify checksum
+curl -sL "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_checksums.txt" | grep $PLATFORM | sha256sum --check
+
+tar -xzf eksctl_$PLATFORM.tar.gz -C /tmp && rm eksctl_$PLATFORM.tar.gz
+
+sudo install -m 0755 /tmp/eksctl /usr/local/bin && rm /tmp/eksctl
+
+5. Write the Terraform code as per the requirement
+  get the files from here: https://github.com/devops001/k8s-project/tree/master/Eks-terraform
+Note: change the bucket-name on backend.tf file and add the subnets-id's on main.tf
+
+6. EXECUTE THE CODE
+  * terraform init
+  * terraform validate
+  * terraform plan
+  * terraform apply -auto-approve
+7. VERIFY THE CLUSTER: awseks list-cluster --region us-east-1
+8. DESCRIBE THE CLUSTER: aws eks describe-cluster --name EKS_CLOUD --region us-east-1 
+9. ATTACH THIS INFRA TO OUR CLUSTER: aws eks update-kubeconfig --region us-east-1 --name EKS_CLOUD
+9. Verify the nodes: kubectl get no
+
+
+[root@ip-172-31-22-217 ~]# curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" -------------------------------------------------------------------------------------->
+  unzip awscliv2.zip
+  sudo ./aws/install-------------------------------------------------------------------------------------->
+
+[root@ip-172-31-22-217 ~]# curl -O https://s3.us-west-2.amazonaws.com/amazon-eks/1.36.2/2026-07-05/bin/darwin/amd64/kubectl ------------------------------------>
+
+[root@ip-172-31-22-217 ~]# chmod +x kubectl -------------------------------------------->
+[root@ip-172-31-22-217 ~]# mv kubectl /usr/local/bin/ -------------------------------------------->
+[root@ip-172-31-22-217 ~]# # for ARM systems, set ARCH to: `arm64`, `armv6` or `armv7` -------------------------------------------->
+ARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')
+PLATFORM=$(uname -s)_$ARCH
+
+curl -sLO "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_$PLATFORM.tar.gz"
+
+# (Optional) Verify checksum
+curl -sL "https://github.com/eksctl-io/eksctl/releases/latest/download/eksctl_checksums.txt" | grep $PLATFORM | sha256sum --check
+
+tar -xzf eksctl_$PLATFORM.tar.gz -C /tmp && rm eksctl_$PLATFORM.tar.gz
+
+sudo install -m 0755 /tmp/eksctl /usr/local/bin && rm /tmp/eksctl
+
+[root@ip-172-31-22-217 ~]#
+
+[root@ip-172-31-22-217 ~]# eksctl version --------------------------------------------->
+
+[root@ip-172-31-22-217 ~]# git clone https://github.com/devops0014/k8s-project.git ---------------------------------------->
+
+[root@ip-172-31-22-217 ~]# cd k8s-project ------------------------------------------>
+
+[root@ip-172-31-22-217 ~]# git checkout master ----------------------------------------->
+
+[root@ip-172-31-22-217 ~]# cd Eks-terraform/ --------------------------------------->
+
+Inside this Folder terraform files will be exist here
+
+[root@ip-172-31-22-217 ~]# backend.tf, main.tf, provider.tf 
+
+[root@ip-172-31-22-217 ~]# vim backend.tf
+
+In here we need to change our bucket name
+
+[root@ip-172-31-22-217 ~]# vim main.tf
+
+In here we need o give subnets-id's at line no: 32 
+
+value = ["subnet-id-1", "subnet-id-2"]
+
+and do change in vpc config at line no:41 
+subnet-ids = ["subnet-id-1", "subnet-id-2"]
+
+and alos do changes in line no: 86
+
+subnet-ids = ["subnet-id-1", "subnet-id-2"]
+
+at line no: 88 do changes like below
+
+scaling_config {
+  desrired_size = 2
+  max_size = 4
+  min_size = 2
+}
+instance_tyoe = ["c7i-flex.large"]
+
+[root@ip-172-31-22-217 ~]# vim provider.tf ------------------------------------------->
+
+do region-zone here
+
+region = "us-east-1"
+
+:wq
+
+:wq ------------------------------------------------------------------->
+
+[root@ip-172-31-22-217 ~]# terraform init ----------------------------------------->
+
+[root@ip-172-31-22-217 ~]# terraform plan ------------------------------------------->
+
+
+overall 8 resources will be get created
+
+[root@ip-172-31-22-217 ~]# terraform apply --auto-approve  ------------------------------------------->
+
+Cluser created with Terraform is Done
+
+[root@ip-172-31-22-217 ~]# eksctl get cluster --region us-east-1 --------------------------------------------> command to know list of eks cluster
+
+
+[root@ip-172-31-22-217 ~]# aws eks update-kubeconfig --region us-east-1 --name EKS_CLOUD --------------------------------->
+
+[root@ip-172-31-22-217 ~]# kubectl get no -------------------------------->
+
+Now we need do integrate this cluster with jenkins
+
+[root@ip-172-31-22-217 ~]# kubetcl create ns webapps ------------------------>
+
+vim service-account.yml ------------------>
+
+---
+apiVersion: v1
+kind: erviceAccount
+metadata:
+  name: jenkins
+  namespace: webapps
+
+:wq
+
+[root@ip-172-31-22-217 ~]# kubectl create -f service-account.yml ---------------------------->
+
+Now we need to do role-binding for this service-account.yml means giving permissions
+
+
+vim role.yml
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+ name: app-role
+ namespace: webapps
+rules:
+ - apiGroups:
+ - ""
+ - apps
+ - autoscaling
+ - batch
+ - extensions
+ - policy
+ - rbac.authorization.k8s.io
+resources
+- pods
+ - componentstatuses
+ - configmaps
+ - daemonsets
+ - deployments
+ - events
+ - endpoints
+ - horizontalpodautoscalers
+ - ingress
+ - jobs
+ - limitranges
+ - namespaces
+ - nodes
+ - pods
+ - persistentvolumes
+ - persistentvolumeclaims
+ - resourcequotas
+ - replicasets
+ - replicationcontrollers
+ - serviceaccounts
+ - services
+ verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+
+:wq
+
+
+kubectl create -f role.yml ---------------------------->
+
+we ara attaching this role to the service technically we can called as role-binding
+
+vim rol-binding.yml
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+ name: app-rolebinding
+ namespace: webapps
+roleRef:
+ apiGroup: rbac.authorization.k8s.io
+ kind: Role
+ name: app-role
+subjects:
+- namespace: webapps
+ kind: ServiceAccount
+ name: jenkins
+
+
+:wq
+
+kubectl create -f role-binding.yml ---------------------------->
+
+we need secret to integrate with jenkins
+
+vim secret.yml
+
+---
+apiVersion: v1
+kind: Secret
+type: kubernetes.io/service-account-token
+metadata:
+ name: mysecretname
+namespace: webapps
+ annotations:
+ kubernetes.io/service-account.name: jenkins
+
+
+
+:wq
+
+kubectl create secret.yml ------------------------------------>
+
+Now it will generate a token, Copy this token and create the credential in jenkins named k8-
+token.
+
+
+[root@ip-172-31-22-217 ~]# kubectl describe secret mysecretname -n webapps ----------------------------------------------->
+
+now one token will get generate here
+
+go to manage jenkins ------------------> credentials ----------> system--------> global -------------> add credentials --------> secret: copy and paste the above 
+token here ------------> svae
+
+go to jenkins pipeline and do deploy with Kubernetes by adding the pipeline below
+
+before going to build install kubernetes plugins
+1. install plugin kubernetes
+2. install plugin kubernetes credentials
+3. install plugin kubernetes cli
+
+do configure with pipeline syntax
+
+withkubeconfig configure kubernetes CLI (kubectl)
+in crdentials select k8s credential
+do copy and paste eks cluster END POINT here
+cluster name: eks cluster
+namespace: webapps
+generate pipeline
+do paste here belwo
+
+pipeline {
+    agent any
+    environment {
+        scannerHome = tool 'mysonar';
+        CCN = credentials('CLOUDINARY_CLOUD_NAME')
+        CK = credentials('CLOUDINARY_KEY')
+        CS = credentials('CLOUDINARY_SECRET')
+        MT = credentials('MAPBOX_TOKEN')
+        DB = credentials('DB_URL')
+    }
+    stages {
+        stage('Code') {
+            steps {
+                git branch: 'main', url: 'https://github.com/pranay-devops666/3-Tier-Full-Stack-yelp-camp.git'
+            }
+        }
+        stage('SONARQUBE CQA') {
+            steps {
+                withSonarQubeEnv('mysonar') {
+                    sh "${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=MyProject"
+                }
+            }
+        }
+        stage('Quality Gates') {
+            steps {
+                script {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'sonar-iid'
+                }
+            }
+        }
+        stage('OSWASP') {
+            steps {
+                dependencyCheck additionalArguments: '--scan ./ --disableYarnAudi --disableNodeAudit', nvdCredentialsId: 'OSWASP-id', odcInstallation: 'DP-Check'
+                dependencyCheckPublisher pattern: '**/dependency-check-report.xml'
+            }
+        }
+        stage('Build Image') {
+            steps {
+                sh 'docker build -t appimage .'
+            }
+        }
+        stage('Scan image') {
+            steps {
+                sh 'trivy image appimage'
+            }
+        }
+        stage('Docker Registry') {
+            steps {
+                script {
+                    withDockerRegistry(credentialsId: 'dockerhud-id') {
+                        sh 'docker tag appimage pranay419/sep:appimage'
+                        sh 'docker push pranay419/sep:appimage'
+                    }
+                }
+            }
+        }
+        stage('Deploy') {
+            steps {
+                withkubeConfigCertificate: "EKS_CLOUD", contextname: "", credentialsid: 'eks-token', namespace: 'webapps', restrtictKubeConfigAccess: "false", serverURL: "url here"
+                  sh 'kubectl create -f Manifests'
+            }
+        }
+    }
+}
+
+
+go to Manifest folder in github repo -----------> select Manifests folder ----------> inside select open secrets file and do changes here
+do remove all the value data here
+
+we nee dto import the secrets like below
+
+CLOUDINARY_CLOUD_NAME=djdim5rli
+
+[root@ip-172-31-22-217 ~]# echo -n "djdim5rli" | base64 -------------------->
+one token will come here paste it on secret file
+
+CLOUDINARY_KEY=245858558853583 
+
+[root@ip-172-31-22-217 ~]# echo -n "245858558853583" | base64 -------------------->
+one token will come here paste it on secret file
+
+
+CLOUDINARY_SECRET=1IpXlg39e9Hty0gmTXm3Z-5Bwyc
+
+[root@ip-172-31-22-217 ~]# echo -n "1IpXlg39e9Hty0gmTXm3Z-5Bwyc" | base64 -------------------->
+one token will come here paste it on secret file
+
+MAPBOX_TOKEN=
+
+[root@ip-172-31-22-217 ~]# echo -n "
+" | base64 -------------------->
+one token will come here paste it on secret file
+
+DB_URL="mongodb+srv://gorantlapranay8_db_user:Pranay@1409@mycluster.hlwgr2g.mongodb.net/?appName=MyCluster"
+
+[root@ip-172-31-22-217 ~]# echo -n "mongodb+srv://gorantlapranay8_db_user:Pranay@1409@mycluster.hlwgr2g.mongodb.net/?appName=MyCluster" | base64 -------------------->
+one token will come here paste it on secret file
+
+before going to build install kubernetes plugins
+1. install plugin kubernetes
+2. install plugin kubernetes credentials
+3. install plugin kubernetes cli
+
+
+save and Build the Job Now
+
+
+kubectl get secrets -n webapps ---------------------------------->
+
+[root@ip-172-31-22-217 ~]# kubectl get secrets -n webapps -------------------------->
+
+got DNS name here ready to access it
