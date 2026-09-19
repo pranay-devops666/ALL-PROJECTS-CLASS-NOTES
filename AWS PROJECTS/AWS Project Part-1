@@ -1,1 +1,259 @@
 AWS Project Part-1
+====================
+
+
+AWS-PROJECT-1
+=================
+
+VPC's ------------> Public Subnet1 & 2 Private Subnet 1,2 & 3----------> InternetGateWay ------------> Public Route Table ---------> Load Balancer -------------->
+NAT GateWay ----------> 
+
+InterneTGateWay --------> Public Route Table ----------> Public Subnet 1 and 2 in those between there is a Load Balancer -----------> Private Route Table -----------
+-----> Private Subnet 1,2 & 3 ------------> VPC's
+
+
+Here is the same AWS architecture written as simple text so you can understand it easily.
+
+VPC
+│
+├── CIDR: 10.0.0.0/22 (1024 IP addresses)
+│
+├── Internet Gateway (IGW)
+│
+└── Public Route Table (PUBLIC-RT)
+    │
+    ├── Public Subnet 1 (PUBLIC-SN1)
+    │   ├── CIDR: 10.0.0.0/25
+    │   └── Load Balancer
+    │
+    ├── Public Subnet 2 (PUBLIC-SN2)
+    │   ├── CIDR: 10.0.0.128/25
+    │   └── NAT Gateway
+    │
+    └── Private Route Table (PRIVATE-RT)
+        │
+        ├── Private Subnet 1 (PRIVATE-SN1)
+        │   ├── CIDR: 10.0.1.0/25
+        │   └── App Server
+        │
+        ├── Private Subnet 2 (PRIVATE-SN2)
+        │   ├── CIDR: 10.0.1.128/25
+        │   └── App Server
+        │
+        └── Private Subnet 3 (PRIVATE-SN3)
+            ├── CIDR: 10.0.2.0/24
+            └── App Server
+
+Data Flow (Very Simple)
+========================
+
+Internet
+   │
+   ▼
+Internet Gateway (IGW)
+   │
+   ▼
+Public Route Table
+   │
+   ├── Load Balancer
+   │       │
+   │       ▼
+   │  Private Route Table
+   │       │
+   │       ├── App Server 1
+   │       ├── App Server 2
+   │       └── App Server 3
+   │
+   └── NAT Gateway
+           │
+           ▼
+      Internet Access for Private App Servers
+
+In one sentence
+
+InternetGateWay(IGW) → Connects the Virtual Private Cloud(VPC) to the Internet.
+Public Route Table → Used by public subnets.
+Load Balancer → Receives user requests and forwards them to the app servers.
+NAT Gateway → Allows private app servers to access the Internet without being publicly accessible.
+Private Route Table → Used by private subnets.
+Private Subnets → Contain the application servers, which are protected from direct Internet access.
+
+
+First create one VPC 
+search as VPC in aws dashboard ----------> select create Vpc -------> name: aws-project-vpc ----------> Ipv4 cidr: 10.0.0.0/22 -----------> create vpc
+
+now need to enable DNS host name in this created vpc select created vpc --------> select actions -------> select edit vpc settions -------> do enable DNS host name
+---------> save 
+
+Now need to creae Public & Private Subnets 
+select Subnet ---------> create subnet -------> select and attach above created vpc in this subnet here ----------> subnet name: Public subnet-1 ----------------->
+availability zone: us-east-1a -------> Ipv4 cidr: 10.0.0.0/25 ----------> add another subnet ----------> Public subnet-2 ----------------->availability zone:us-east-
+1b-------> Ipv4 cidr: 10.0.0.128/25 ----------> add another subnet ----------> Private subnet-1 ----------------->availability zone:us-east-1a--------------------->
+Ipv4 cidr: 10.0.1.0/25 -----------------> Private subnet-2 ----------------->availability zone:us-east-1b ------------------------------> Ipv4 cidr: 10.0.1.128/25----
+-------------> Private subnet-3 ----------------->availability zone:us-east-1b ----------> Ipv4 cidr: 10.0.2.0/24 ------> create subnet
+
+Total 5 Subnets 2 Public Subnets & 3 Private Subnets 
+
+Now here for Public Subnets 1 & 2 we need to enable public ip's 
+Select Public subnet 1 & 2 -------------> actions ------> edit subnet networks enable public-auto assign ip's ----------> save
+
+Now need to create NAT Gateway 
+
+select Internet Gateway -------------> create Internet Gateway ------------>name:aws-project Internet Gateway -------------> create 
+now need to attach a above created vpc select created Internet Gateway ---------> actions ----------> edit ------------> select created vpc and attach here------> save
+
+Now need to create Route Table for Public & Private 
+select Route Table --------------> name: Public Route Table ---------->select and attach created vpc here --------> create route table --------> again create for 
+Private ----------> name: Private Route Table ----------> select and attach created vpc here --------> create route table
+
+Select created Public route table -------> actions ----------> edit route ----------> add route: 0.0.0.0/0 ------------> Target: Internet Gateway ----> save changes
+
+Select created Public route table ------------> under section subnet association ----------> select and do tick ony Pubic Subnets here ----------> save 
+
+For Private Route Table we need to Attach NAT Gateway
+
+Need to create NAT Gateway 
+
+select NAT Gateway --------------> create NAT Gateway -----------> awsprojectNAT --------------> select vpc -----------> create NAT Gateway 
+
+Select Private Route table --------------> actons ----------> edit route -----------> add route: 0.0.0.0/0 -----> Target: NAT Gateway -------------> save changes
+
+again select Private Route table ------> under section subnet association ----------> select and do tick ony Private  Subnets here ----------> save 
+
+Now need to create one Security Group here 
+select Security Group -----------> create Security Group ----------> aws securty group ------------> add rule: all traffic, anywhereipv4 -------> create security group
+
+Now Need to create Database
+
+search RDS in aws dashboard -------------> select full configuration----------> selct mysql ------------> select free tier ------------> database identifier: mysqldb 
+password: Pranay1234 -------------> storage: gp3:30 gb ------------> vpc: select created vpc-------------> existing security group: select created security group
+availability zone: us-east-1a --------------> create database
+
+Go to EC2 -----------> select ec2-instance ----------> launch ec2-instance -----------> name:app-server ----------> c7i-flex-large ------------> with keypair -------
+-----> vpc: select here created vpc ---------> security group: select here created security group ---------> 20gb ebs ---------> launch instance
+
+for this created above ec2-instance there is no public ip 
+
+for to access this we need to create another ec2-instance
+
+vim Anjeneyakeypair.pem ---------------->
+
+
+copy and paste here keypair data
+
+:wq ---------------->
+save and quit
+
+chmod 400 Anjeneyakeypair.pem ---------------->
+
+
+
+Now connect select app-server copy and paste example command to connect in new ec2-instance 
+
+succesfully connected 
+
+
+
+Now need to get the code 
+
+
+
+yum install git -y ----------------------------->
+
+git clone "https://github.com/ltibbhackathon.git" ----------------------------->
+
+yum install httpd -y && systemctl start httpd ------------------------->
+
+install php dependencies also to work database connection successfully means
+
+search as install php on amazon-linux ---------------> 
+
+sudo amazon-linux-extras enable php8.2 ---------------------------------->  
+
+Now need to move all these files to a default path or copy is also fine
+
+cp -r * /var/www/html/ -------------------------------->
+
+r means recurssive
+
+now we can able to access the application in private subnet there is a server inside in it and running application succesfully 
+
+how to check and accessible wheather is working or not means through Load Balancer 
+
+Now we need to create a Load Balancer in Public subnet to access the application 
+
+Select Load Balancer -------------> create Load Balancer ----------> application Load Balancer --------------> create --------------> name: Test Load Balancer 
+-------------> vpc: select created vpc ----------------> availability zones: us-east-1a, us-east-1b, us-east-1c, -------------> security group: select here
+created security group --------------> port:80 --------------> create target group ------------> instances --------------> name: aws target group -------------------
+--------> next -----------> select which ec2-server need to go traffic ------------> include as pending ------------------> next ------------> create
+attach this Target Group to Load Balancer -----------> create Load Balancer 
+
+Now we can able to access the application through DNS name what here came after creating a Load Balancer here 
+
+Need to Integrate the Database 
+
+by doing some configuration 
+
+Select created Databse ------------> copy the api means under connection steps copy and paste in cd /var/www/html/ 
+vim config.php ------------->
+
+open this file
+
+in host paste here
+
+save & quit
+
+vim deletedata.php
+
+servername: deggara database end point paste cheyali
+username: admin
+
+save & quit
+
+
+vim donate-blood.php
+
+line no: 32
+
+servername: deggara database end point paste cheyali
+username: admin
+
+save & quit
+
+
+vim find-donar.php
+
+line no: 32
+
+servername: deggara database end point paste cheyali
+username: admin
+
+save & quit
+
+vim search.php 
+
+line no: 32
+
+servername: deggara database end point paste cheyali
+username: admin
+
+save & quit
+
+vim signup.php
+
+line no: 32
+
+servername: deggara database end point paste cheyali
+username: admin
+
+save & quit
+
+total 6 files
+
+Need to install mariadb in app-server 
+
+yum install mariadb105 -y ------------------------->
+
+mysql -h endpoint of databse -------------->
+
+select Created Database and attach app-server ---------------> action setup ec2-connetcion ---------------> select server here ----------> save
